@@ -122,7 +122,7 @@ IS_TESTING = "test" in sys.argv or any("test" in arg for arg in sys.argv)
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage" if (DEBUG or IS_TESTING) else "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage" if (DEBUG or IS_TESTING or os.getenv("VERCEL")) else "whitenoise.storage.CompressedManifestStaticFilesStorage"
     },
 }
 MEDIA_URL = "/media/"
