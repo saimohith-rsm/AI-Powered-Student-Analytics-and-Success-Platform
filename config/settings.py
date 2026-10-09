@@ -31,13 +31,19 @@ if not SECRET_KEY:
     else:
         raise RuntimeError("SECRET_KEY must be set when DEBUG=False.")
 
-ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,testserver")
+ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,testserver,.vercel.app,.onrender.com")
 RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME", "").strip()
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
-CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
+VERCEL_URL = os.getenv("VERCEL_URL", "").strip()
+if VERCEL_URL:
+    ALLOWED_HOSTS.append(VERCEL_URL)
+
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS", "https://*.vercel.app,https://*.onrender.com")
 if RENDER_EXTERNAL_HOSTNAME:
     CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
+if VERCEL_URL:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{VERCEL_URL}")
 
 AUTH_USER_MODEL = "accounts.User"
 ALLOW_PUBLIC_STUDENT_REGISTRATION = env_bool("ALLOW_PUBLIC_STUDENT_REGISTRATION", DEBUG)
@@ -89,7 +95,12 @@ TEMPLATES = [{
 
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
-DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
+DATABASE_URL = os.getenv("DATABASE_URL", "")
+if not DATABASE_URL:
+    if os.getenv("VERCEL"):
+        DATABASE_URL = "sqlite:////tmp/db.sqlite3"
+    else:
+        DATABASE_URL = f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
 DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=int(os.getenv("DB_CONN_MAX_AGE", "60")), ssl_require=env_bool("DB_SSL_REQUIRE", False))}
 
 AUTH_PASSWORD_VALIDATORS = [
