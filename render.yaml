@@ -2,8 +2,8 @@ services:
   - type: web
     name: smart-campus-analytics
     runtime: python
-    plan: starter
-    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    plan: free
+    buildCommand: bash ./build.sh
     startCommand: python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60
     healthCheckPath: /
     envVars:
@@ -12,7 +12,9 @@ services:
       - key: DEBUG
         value: "False"
       - key: ALLOWED_HOSTS
-        value: localhost,127.0.0.1
+        value: localhost,127.0.0.1,.onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://*.onrender.com
       - key: DATABASE_URL
         fromDatabase:
           name: smart-campus-analytics-db
@@ -31,6 +33,6 @@ services:
         value: "True"
 databases:
   - name: smart-campus-analytics-db
-    plan: basic-256mb
+    plan: free
     databaseName: smart_campus_analytics
     user: smart_campus_analytics
