@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+
+{% block title %}Executive Overview - Smart Campus Analytics{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-grid-1x2 text-primary me-2"></i> Executive Overview Dashboard</h2>
+        <p class="text-muted mb-0">Institution-wide student performance intelligence, risk distribution, and placement readiness.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <form method="post" action="{% url 'analytics:api_recalculate' %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-primary btn-sm rounded-pill fw-semibold">
+                <i class="bi bi-arrow-clockwise me-1"></i> Recalculate Analytics
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Global Filter Bar -->
+<div class="card card-stats p-3 mb-4 bg-light border">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Department</label>
+            <select name="department" class="form-select form-select-sm">
+                <option value="">All Departments</option>
+                {% for d in departments %}
+                    <option value="{{ d.code }}" {% if selected_dept == d.code %}selected{% endif %}>{{ d.code }} - {{ d.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Semester</label>
+            <select name="semester" class="form-select form-select-sm">
+                <option value="">All Semesters</option>
+                {% for sem in "12345678" %}
+                    <option value="{{ sem }}" {% if selected_sem == sem %}selected{% endif %}>Semester {{ sem }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Risk Level</label>
+            <select name="risk_level" class="form-select form-select-sm">
+                <option value="">All Risk Levels</option>
+                <option value="LOW" {% if selected_risk == 'LOW' %}selected{% endif %}>Low Risk</option>
+                <option value="MEDIUM" {% if selected_risk == 'MEDIUM' %}selected{% endif %}>Medium Risk</option>
+                <option value="HIGH" {% if selected_risk == 'HIGH' %}selected{% endif %}>High Risk</option>
+                <option value="CRITICAL" {% if selected_risk == 'CRITICAL' %}selected{% endif %}>Critical Risk</option>
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm w-100 rounded-pill"><i class="bi bi-filter"></i> Apply Filters</button>
+            <a href="{% url 'analytics:overview_dashboard' %}" class="btn btn-outline-secondary btn-sm rounded-pill"><i class="bi bi-x-circle"></i> Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- Summary Metric Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card card-stats p-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small">Total Enrolled</div>
+                    <h3 class="fw-bold mb-0">{{ total_enrolled }}</h3>
+                </div>
+                <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-people"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-stats p-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small">Avg Success Score</div>
+                    <h3 class="fw-bold text-info mb-0">{{ avg_success_score }} <span class="fs-6 text-muted">/100</span></h3>
+                </div>
+                <div class="stat-icon bg-info bg-opacity-10 text-info">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-stats p-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small">Students Needing Review</div>
+                    <h3 class="fw-bold text-danger mb-0">{{ students_requiring_review }}</h3>
+                </div>
+                <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-stats p-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small">Overall Attendance</div>
+                    <h3 class="fw-bold text-success mb-0">{{ overall_att_pct }}%</h3>
+                </div>
+                <div class="stat-icon bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-calendar-check"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Real-Data Aggregated Insights Panel -->
+{% if insights %}
+<div class="card card-stats p-4 mb-4 border-start border-4 border-warning">
+    <h5 class="fw-bold mb-3"><i class="bi bi-lightbulb text-warning me-2"></i> Automated Actionable Insights</h5>
+    <div class="row g-3">
+        {% for insight in insights %}
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge {{ insight.badge_class }}">{{ insight.metric }}</span>
+                        <a href="{{ insight.action_url }}" class="btn btn-sm btn-link p-0 text-decoration-none fw-semibold">{{ insight.action_label }} &rarr;</a>
+                    </div>
+                    <h6 class="fw-bold mb-1">{{ insight.title }}</h6>
+                    <p class="text-muted small mb-0">{{ insight.description }}</p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Interactive Visualizations Grid -->
+<div class="row g-4 mb-4">
+    <!-- Chart 1: Risk Distribution -->
+    <div class="col-md-6">
+        <div class="card card-stats p-4 h-100">
+            <h5 class="fw-bold mb-3"><i class="bi bi-pie-chart text-primary me-2"></i> Academic Risk Distribution</h5>
+            <div style="height: 260px;">
+                <canvas id="riskDistChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 2: Department Comparisons -->
+    <div class="col-md-6">
+        <div class="card card-stats p-4 h-100">
+            <h5 class="fw-bold mb-3"><i class="bi bi-bar-chart-line text-success me-2"></i> Department Performance Comparison</h5>
+            <div style="height: 260px;">
+                <canvas id="deptCompChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Department Breakdown Table -->
+<div class="card card-stats p-4">
+    <h5 class="fw-bold mb-3"><i class="bi bi-table text-primary me-2"></i> Department Operational Breakdown</h5>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Department Code</th>
+                    <th>Department Name</th>
+                    <th>Enrolled Students</th>
+                    <th>Average Success Score</th>
+                    <th>At-Risk Count</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in dept_summary %}
+                    <tr>
+                        <td class="fw-bold">{{ d.code }}</td>
+                        <td>{{ d.name }}</td>
+                        <td><span class="badge bg-secondary">{{ d.student_count }}</span></td>
+                        <td class="fw-semibold text-primary">{{ d.avg_score }} / 100</td>
+                        <td>
+                            {% if d.at_risk_count > 0 %}
+                                <span class="badge bg-danger">{{ d.at_risk_count }} At-Risk</span>
+                            {% else %}
+                                <span class="badge bg-success">0 Risk</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'analytics:student_directory' %}?department={{ d.code }}" class="btn btn-sm btn-outline-primary rounded-pill">View Students</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Risk Distribution Doughnut Chart
+    const ctxRisk = document.getElementById('riskDistChart').getContext('2d');
+    new Chart(ctxRisk, {
+        type: 'doughnut',
+        data: {
+            labels: ['Low Risk', 'Medium Risk', 'High Risk', 'Critical Risk'],
+            datasets: [{
+                data: [
+                    {{ risk_dist.LOW|default:0 }},
+                    {{ risk_dist.MEDIUM|default:0 }},
+                    {{ risk_dist.HIGH|default:0 }},
+                    {{ risk_dist.CRITICAL|default:0 }}
+                ],
+                backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#881337']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+
+    // 2. Department Comparison Bar Chart
+    const ctxDept = document.getElementById('deptCompChart').getContext('2d');
+    new Chart(ctxDept, {
+        type: 'bar',
+        data: {
+            labels: [{% for d in dept_summary %}'{{ d.code }}',{% endfor %}],
+            datasets: [{
+                label: 'Avg Success Score',
+                data: [{% for d in dept_summary %}{{ d.avg_score }},{% endfor %}],
+                backgroundColor: '#3b82f6'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, max: 100 } }
+        }
+    });
+});
+</script>
+{% endblock %}

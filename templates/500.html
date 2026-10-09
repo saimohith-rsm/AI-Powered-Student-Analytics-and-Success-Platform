@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500 Internal Server Error - Smart Campus Analytics</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        .error-card {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.25rem;
+            padding: 3rem 2rem;
+            max-width: 540px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="error-card">
+        <div class="display-1 text-danger fw-bold mb-2">
+            <i class="bi bi-exclamation-triangle-fill"></i> 500
+        </div>
+        <h2 class="fw-bold mb-3">Internal Server Error</h2>
+        <p class="text-light opacity-75 mb-4">
+            An unexpected error occurred while processing your request. The technical team has been notified and the incident has been logged.
+        </p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="/" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                <i class="bi bi-house-door me-1"></i> Return Home
+            </a>
+            <button onclick="window.location.reload()" class="btn btn-outline-light rounded-pill px-4">
+                <i class="bi bi-arrow-clockwise me-1"></i> Try Again
+            </button>
+        </div>
+    </div>
+</body>
+</html>

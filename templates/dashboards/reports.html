@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports & Exports - Smart Campus Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-file-earmark-spreadsheet text-primary me-2"></i> Reports & Data Export Center</h2>
+        <p class="text-muted mb-0">Generate institutional analytics reports and export role-scoped CSV datasets.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card card-stats p-4 text-center h-100">
+            <div class="stat-icon bg-danger bg-opacity-10 text-danger mx-auto mb-3">
+                <i class="bi bi-exclamation-triangle fs-3"></i>
+            </div>
+            <h5 class="fw-bold mb-2">At-Risk Student Audit Report</h5>
+            <p class="text-muted small mb-4">Export all active students flagged with HIGH or CRITICAL academic risk along with triggering reasons.</p>
+            <a href="{% url 'analytics:export_report' report_type='risk' %}" class="btn btn-outline-danger rounded-pill mt-auto">
+                <i class="bi bi-download me-1"></i> Export Risk CSV
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card card-stats p-4 text-center h-100">
+            <div class="stat-icon bg-info bg-opacity-10 text-info mx-auto mb-3">
+                <i class="bi bi-briefcase fs-3"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Placement Readiness Report</h5>
+            <p class="text-muted small mb-4">Export aptitude, coding, mock interview, and overall placement readiness scores across departments.</p>
+            <a href="{% url 'analytics:export_report' report_type='placement' %}" class="btn btn-outline-info rounded-pill mt-auto">
+                <i class="bi bi-download me-1"></i> Export Placement CSV
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card card-stats p-4 text-center h-100">
+            <div class="stat-icon bg-success bg-opacity-10 text-success mx-auto mb-3">
+                <i class="bi bi-heart-pulse fs-3"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Intervention Audit Trail</h5>
+            <p class="text-muted small mb-4">Export closed-loop intervention records, assigned counselors, follow-up dates, and outcome notes.</p>
+            <a href="{% url 'analytics:export_report' report_type='interventions' %}" class="btn btn-outline-success rounded-pill mt-auto">
+                <i class="bi bi-download me-1"></i> Export Interventions CSV
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

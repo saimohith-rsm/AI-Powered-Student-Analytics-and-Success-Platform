@@ -1,0 +1,352 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}CSV Student Risk Checker & Dataset Import - Smart Campus Analytics{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold mb-1">
+            <i class="bi bi-file-earmark-check text-warning me-2"></i> CSV Student Risk Checker & Import
+        </h2>
+        <p class="text-muted mb-0">
+            Upload student datasets to evaluate academic & attendance risk, compute composite success scores, and view explainable risk flags.
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'analytics:download_sample_template' %}" class="btn btn-primary rounded-pill px-3 shadow-sm">
+            <i class="bi bi-download me-1"></i> Download Sample CSV
+        </a>
+    </div>
+</div>
+
+<!-- Upload & Action Section -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8 mx-auto">
+        <div class="card card-stats p-4 border-0 shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="fw-bold mb-0">
+                    <i class="bi bi-cloud-arrow-up text-primary me-2"></i> Upload Student Dataset
+                </h5>
+                <span class="badge bg-light text-dark border">.CSV, .XLSX, .XLS</span>
+            </div>
+            <p class="text-muted small mb-3">
+                Select your student CSV or Excel file. Choose <strong>Check Risk (Preview Only)</strong> for instant analysis without saving, or <strong>Check & Import to DB</strong> to save records.
+            </p>
+
+            <form method="post" enctype="multipart/form-data" id="riskCheckForm">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Select Student Dataset File</label>
+                    <input type="file" name="dataset_file" class="form-control form-control-lg" accept=".csv, .xlsx, .xls" required id="fileInput">
+                    <div class="form-text small mt-2">
+                        <i class="bi bi-shield-check text-success me-1"></i> Accepted formats: <code>.csv</code>, <code>.xlsx</code>, <code>.xls</code> (Max file size: 5 MB).
+                    </div>
+                </div>
+
+                <div class="d-flex flex-column flex-sm-row gap-2 mt-auto">
+                    <button type="submit" name="action" value="analyze" class="btn btn-outline-primary btn-lg flex-fill rounded-pill fw-semibold">
+                        <i class="bi bi-search me-1"></i> Check Risk (Preview Only)
+                    </button>
+                    <button type="submit" name="action" value="import_and_analyze" class="btn btn-primary btn-lg flex-fill rounded-pill fw-semibold shadow-sm">
+                        <i class="bi bi-cloud-upload-fill me-1"></i> Check & Import to DB
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% if analysis_completed %}
+<!-- Analysis Results Section -->
+<div class="card card-stats p-4 border-0 shadow-sm mb-4" id="results-section">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-3 border-bottom gap-2">
+        <div>
+            <div class="d-flex align-items-center gap-2">
+                <h4 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-clipboard2-data-fill text-primary me-2"></i> Risk Evaluation Results
+                </h4>
+                {% if did_import %}
+                    <span class="badge bg-success"><i class="bi bi-database-check me-1"></i> Imported to Database</span>
+                {% else %}
+                    <span class="badge bg-secondary"><i class="bi bi-eye me-1"></i> Preview Mode (Not Saved)</span>
+                {% endif %}
+            </div>
+            <div class="text-muted small mt-1">
+                Evaluated file: <strong class="font-monospace text-dark">{{ filename }}</strong> &bull; Total records: <strong>{{ results.total_rows }}</strong>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-success btn-sm rounded-pill px-3" onclick="exportResultsToCSV()">
+                <i class="bi bi-file-earmark-arrow-down me-1"></i> Export Evaluation Report (.CSV)
+            </button>
+        </div>
+    </div>
+
+    <!-- KPI Summary Badges -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-2">
+            <div class="p-3 bg-light rounded text-center border">
+                <div class="text-muted small fw-semibold">Total Students</div>
+                <div class="fs-3 fw-bold text-dark">{{ results.valid_rows }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="p-3 bg-dark text-white rounded text-center shadow-sm">
+                <div class="small fw-semibold text-light"><i class="bi bi-shield-x me-1"></i> Critical Risk</div>
+                <div class="fs-3 fw-bold text-white">{{ results.critical_count }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="p-3 bg-danger text-white rounded text-center shadow-sm">
+                <div class="small fw-semibold text-light"><i class="bi bi-exclamation-octagon me-1"></i> High Risk</div>
+                <div class="fs-3 fw-bold text-white">{{ results.high_count }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="p-3 bg-warning text-dark rounded text-center shadow-sm">
+                <div class="small fw-semibold"><i class="bi bi-exclamation-triangle me-1"></i> Medium Risk</div>
+                <div class="fs-3 fw-bold">{{ results.medium_count }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="p-3 bg-success text-white rounded text-center shadow-sm">
+                <div class="small fw-semibold text-light"><i class="bi bi-check-circle me-1"></i> Low / Safe</div>
+                <div class="fs-3 fw-bold text-white">{{ results.low_count }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="p-3 bg-light rounded text-center border">
+                <div class="text-muted small fw-semibold">Avg Success Score</div>
+                <div class="fs-3 fw-bold text-primary">{{ results.avg_success_score }}<small class="fs-6 text-muted">/100</small></div>
+            </div>
+        </div>
+    </div>
+
+    {% if results.errors %}
+        <div class="alert alert-warning mb-4">
+            <div class="fw-semibold mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i> File Validation Warnings ({{ results.errors|length }}):</div>
+            <ul class="mb-0 small ps-3">
+                {% for err in results.errors %}
+                    <li>{{ err }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <!-- Filter & Search Toolbar -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Risk Filters">
+            <button type="button" class="btn btn-outline-secondary active filter-btn" data-filter="all">
+                All ({{ results.valid_rows }})
+            </button>
+            <button type="button" class="btn btn-outline-dark filter-btn" data-filter="CRITICAL">
+                Critical ({{ results.critical_count }})
+            </button>
+            <button type="button" class="btn btn-outline-danger filter-btn" data-filter="HIGH">
+                High ({{ results.high_count }})
+            </button>
+            <button type="button" class="btn btn-outline-warning text-dark filter-btn" data-filter="MEDIUM">
+                Medium ({{ results.medium_count }})
+            </button>
+            <button type="button" class="btn btn-outline-success filter-btn" data-filter="LOW">
+                Safe / Low ({{ results.low_count }})
+            </button>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <input type="text" id="studentSearchInput" class="form-control form-control-sm" placeholder="Search by Student ID or Name..." style="min-width: 250px;">
+        </div>
+    </div>
+
+    <!-- Interactive Evaluated Records Table -->
+    <div class="table-responsive border rounded">
+        <table class="table table-hover align-middle mb-0" id="riskTable">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col" style="width: 50px;">#</th>
+                    <th scope="col">Student ID & Name</th>
+                    <th scope="col">Dept / Sem</th>
+                    <th scope="col">Academic Metrics</th>
+                    <th scope="col" class="text-center">Risk Status</th>
+                    <th scope="col">Success Score</th>
+                    <th scope="col">Key Risk Factors / Flags</th>
+                    <th scope="col">Recommended Intervention</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rec in results.records %}
+                    <tr class="student-row" data-risk="{{ rec.risk_level }}" data-search="{{ rec.student_id }} {{ rec.name }} {{ rec.department }}">
+                        <td class="text-muted small">{{ rec.row_num }}</td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ rec.name }}</div>
+                            <span class="badge bg-light text-secondary border font-monospace">{{ rec.student_id }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary-subtle text-dark border">{{ rec.department }}</span>
+                            <span class="small text-muted d-block">Sem {{ rec.semester }}</span>
+                        </td>
+                        <td>
+                            <div class="small">
+                                <div>CGPA: <strong class="{% if rec.cgpa < 6.0 %}text-danger{% else %}text-dark{% endif %}">{{ rec.cgpa }}</strong></div>
+                                <div>Attendance: <strong class="{% if rec.attendance_percentage < 75 %}text-danger{% else %}text-dark{% endif %}">{{ rec.attendance_percentage }}%</strong></div>
+                                {% if rec.backlog_count > 0 %}
+                                    <div class="text-danger fw-semibold">Backlogs: {{ rec.backlog_count }}</div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            {% if rec.risk_level == 'CRITICAL' %}
+                                <span class="badge bg-dark px-3 py-2 fs-6">
+                                    <i class="bi bi-shield-x me-1"></i> CRITICAL RISK
+                                </span>
+                            {% elif rec.risk_level == 'HIGH' %}
+                                <span class="badge bg-danger px-3 py-2 fs-6">
+                                    <i class="bi bi-exclamation-octagon me-1"></i> HIGH RISK
+                                </span>
+                            {% elif rec.risk_level == 'MEDIUM' %}
+                                <span class="badge bg-warning text-dark px-3 py-2 fs-6">
+                                    <i class="bi bi-exclamation-triangle me-1"></i> MEDIUM RISK
+                                </span>
+                            {% else %}
+                                <span class="badge bg-success px-3 py-2 fs-6">
+                                    <i class="bi bi-check-circle me-1"></i> LOW RISK / SAFE
+                                </span>
+                            {% endif %}
+                            <div class="small text-muted mt-1">{{ rec.segment }}</div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fw-bold fs-5 {% if rec.overall_success_score < 50 %}text-danger{% elif rec.overall_success_score < 70 %}text-warning-emphasis{% else %}text-success{% endif %}">
+                                    {{ rec.overall_success_score }}
+                                </span>
+                                <span class="small text-muted">/ 100</span>
+                            </div>
+                            <div class="progress" style="height: 6px; width: 100px;">
+                                <div class="progress-bar score-bar {% if rec.overall_success_score < 50 %}bg-danger{% elif rec.overall_success_score < 70 %}bg-warning{% else %}bg-success{% endif %}"
+                                     role="progressbar" data-width="{{ rec.overall_success_score }}" aria-valuenow="{{ rec.overall_success_score }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </td>
+                        <td class="small" style="max-width: 250px;">
+                            {% if rec.risk_flags %}
+                                {% for flag in rec.risk_flags %}
+                                    <div class="text-danger mb-1"><i class="bi bi-x-circle me-1"></i> {{ flag }}</div>
+                                {% endfor %}
+                            {% elif rec.positive_factors %}
+                                {% for pos in rec.positive_factors %}
+                                    <div class="text-success mb-1"><i class="bi bi-check-circle me-1"></i> {{ pos }}</div>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted"><i class="bi bi-dash me-1"></i> Metrics within standard threshold</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if rec.recommended_interventions %}
+                                {% for interv in rec.recommended_interventions %}
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle d-inline-block mb-1">
+                                        <i class="bi bi-arrow-right-circle me-1"></i> {{ interv }}
+                                    </span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="badge bg-light text-muted border">No Intervention Required</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">No student records found in file.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Client-side filtering & searching for the results table
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.score-bar').forEach(function(bar) {
+        const w = bar.getAttribute('data-width');
+        if (w) bar.style.width = w + '%';
+    });
+
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const searchInput = document.getElementById('studentSearchInput');
+    const rows = document.querySelectorAll('.student-row');
+
+    let currentFilter = 'all';
+    let currentSearch = '';
+
+    function applyFilterAndSearch() {
+        rows.forEach(row => {
+            const risk = row.getAttribute('data-risk');
+            const searchContent = (row.getAttribute('data-search') || '').toLowerCase();
+
+            const matchesFilter = (currentFilter === 'all') || (risk === currentFilter);
+            const matchesSearch = currentSearch === '' || searchContent.includes(currentSearch);
+
+            if (matchesFilter && matchesSearch) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    if (filterButtons) {
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                filterButtons.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.getAttribute('data-filter');
+                applyFilterAndSearch();
+            });
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            currentSearch = this.value.toLowerCase().trim();
+            applyFilterAndSearch();
+        });
+    }
+});
+
+// Export client-side analyzed results to CSV
+function exportResultsToCSV() {
+    const table = document.getElementById('riskTable');
+    if (!table) return;
+
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+
+    rows.forEach(row => {
+        if (row.style.display === 'none') return;
+        let cols = row.querySelectorAll('th, td');
+        let rowData = [];
+        cols.forEach(col => {
+            let text = col.innerText.replace(/(\r\n|\n|\r)/gm, ' ').replace(/\s+/g, ' ').trim();
+            text = text.replace(/"/g, '""');
+            rowData.push('"' + text + '"');
+        });
+        if (rowData.length) {
+            csv.push(rowData.join(','));
+        }
+    });
+
+    const csvFile = new Blob([csv.join('\n')], { type: 'text/csv' });
+    const downloadLink = document.createElement('a');
+    downloadLink.download = 'student_risk_assessment_evaluation.csv';
+    downloadLink.href = window.URL.createObjectURL(csvFile);
+    downloadLink.style.display = 'none';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+}
+</script>
+{% endblock %}

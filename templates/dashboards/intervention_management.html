@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Intervention Management - Smart Campus Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-heart-pulse text-primary me-2"></i> Closed-Loop Intervention Workspace</h2>
+        <p class="text-muted mb-0">Track intervention statuses, assign faculty counselors, and record resolution outcomes.</p>
+    </div>
+</div>
+
+<!-- Status Filter -->
+<div class="card card-stats p-3 mb-4 bg-light border">
+    <form method="get" class="row g-3 align-items-center">
+        <div class="col-md-4">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">All Intervention Statuses</option>
+                {% for code, label in status_choices %}
+                    <option value="{{ code }}" {% if selected_status == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary btn-sm w-100 rounded-pill">Filter</button>
+        </div>
+    </form>
+</div>
+
+<!-- Interventions Table -->
+<div class="card card-stats p-4">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Student ID</th>
+                    <th>Intervention Type</th>
+                    <th>Reason / Justification</th>
+                    <th>Assigned Staff</th>
+                    <th>Status</th>
+                    <th>Follow-up Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for interv in interventions %}
+                    <tr>
+                        <td class="fw-bold font-monospace">
+                            <a href="{% url 'analytics:student_detail' student_id=interv.student.student_id %}" class="text-decoration-none">
+                                {{ interv.student.student_id }} ({{ interv.student.full_name }})
+                            </a>
+                        </td>
+                        <td class="fw-semibold">{{ interv.get_intervention_type_display }}</td>
+                        <td class="small max-w-xs text-truncate">{{ interv.reason }}</td>
+                        <td>{{ interv.assigned_by.username|default:"System" }}</td>
+                        <td>
+                            {% if interv.status == 'COMPLETED' %}
+                                <span class="badge bg-success">Completed</span>
+                            {% elif interv.status == 'IN_PROGRESS' %}
+                                <span class="badge bg-info">In Progress</span>
+                            {% elif interv.status == 'PROPOSED' %}
+                                <span class="badge bg-warning text-dark">Proposed</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Cancelled</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ interv.follow_up_date|default:"N/A" }}</td>
+                        <td>
+                            {% if not user.is_student_user %}
+                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#editModal{{ interv.id }}">
+                                    Update Status
+                                </button>
+
+                                <!-- Edit Modal -->
+                                <div class="modal fade" id="editModal{{ interv.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form method="post" action="{% url 'analytics:intervention_action' %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="intervention_id" value="{{ interv.id }}">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title fw-bold">Update Intervention Record</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-semibold">Status</label>
+                                                        <select name="status" class="form-select">
+                                                            {% for code, label in status_choices %}
+                                                                <option value="{{ code }}" {% if interv.status == code %}selected{% endif %}>{{ label }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-semibold">Outcome Notes</label>
+                                                        <textarea name="outcome_notes" class="form-control" rows="3" placeholder="Enter follow-up observations or resolution outcome...">{{ interv.outcome_notes|default:"" }}</textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                            No intervention records found.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Directory - Smart Campus Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-people text-primary me-2"></i> Student Directory</h2>
+        <p class="text-muted mb-0">Search, filter, and inspect institutional student performance records.</p>
+    </div>
+</div>
+
+<!-- Search & Filter Controls -->
+<div class="card card-stats p-3 mb-4 bg-light border">
+    <form method="get" class="row g-3 align-items-center">
+        <div class="col-md-5">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                <input type="text" name="q" class="form-control" placeholder="Search by student ID, name, or email..." value="{{ search_q }}">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select name="department" class="form-select form-select-sm">
+                <option value="">All Departments</option>
+                {% for d in departments %}
+                    <option value="{{ d.code }}" {% if selected_dept == d.code %}selected{% endif %}>{{ d.code }} - {{ d.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="risk_level" class="form-select form-select-sm">
+                <option value="">All Risk Levels</option>
+                <option value="LOW" {% if selected_risk == 'LOW' %}selected{% endif %}>Low Risk</option>
+                <option value="MEDIUM" {% if selected_risk == 'MEDIUM' %}selected{% endif %}>Medium Risk</option>
+                <option value="HIGH" {% if selected_risk == 'HIGH' %}selected{% endif %}>High Risk</option>
+                <option value="CRITICAL" {% if selected_risk == 'CRITICAL' %}selected{% endif %}>Critical Risk</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm w-100 rounded-pill">Filter</button>
+            <a href="{% url 'analytics:student_directory' %}" class="btn btn-outline-secondary btn-sm rounded-pill">Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- Students Data Table -->
+<div class="card card-stats p-4">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Student ID</th>
+                    <th>Full Name</th>
+                    <th>Department</th>
+                    <th>Semester</th>
+                    <th>Success Score</th>
+                    <th>Risk Category</th>
+                    <th>Placement Readiness</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                    {% with snapshot=student.success_snapshots.first %}
+                    <tr>
+                        <td class="fw-bold font-monospace">{{ student.student_id }}</td>
+                        <td>{{ student.full_name }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ student.department.code }}</span></td>
+                        <td>Semester {{ student.current_semester }}</td>
+                        <td>
+                            {% if snapshot %}
+                                <span class="fw-bold text-primary">{{ snapshot.overall_success_score }} / 100</span>
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if snapshot %}
+                                {% if snapshot.academic_risk_level == 'LOW' %}
+                                    <span class="badge bg-success">Low Risk</span>
+                                {% elif snapshot.academic_risk_level == 'MEDIUM' %}
+                                    <span class="badge bg-warning text-dark">Medium Risk</span>
+                                {% elif snapshot.academic_risk_level == 'HIGH' %}
+                                    <span class="badge bg-danger">High Risk</span>
+                                {% else %}
+                                    <span class="badge bg-dark">Critical Risk</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-secondary">Uncalculated</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if snapshot %}
+                                <div class="progress" style="height: 6px; width: 100px;">
+                                    <div class="progress-bar bg-info" style="width: {{ snapshot.placement_readiness_score }}%;"></div>
+                                </div>
+                                <span class="small text-muted">{{ snapshot.placement_readiness_score }}%</span>
+                            {% else %}
+                                <span class="text-muted small">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'analytics:student_detail' student_id=student.student_id %}" class="btn btn-sm btn-outline-primary rounded-pill">
+                                <i class="bi bi-eye"></i> View Profile
+                            </a>
+                        </td>
+                    </tr>
+                    {% endwith %}
+                {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                            No student records found matching your filter criteria.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+        <nav class="mt-4">
+            <ul class="pagination pagination-sm justify-content-end mb-0">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_q }}&department={{ selected_dept }}&risk_level={{ selected_risk }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_q }}&department={{ selected_dept }}&risk_level={{ selected_risk }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign In - Smart Campus Analytics{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-5 col-lg-4">
+        <div class="card login-card p-4">
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="stat-icon bg-primary text-white mx-auto mb-3" style="width: 60px; height: 60px;">
+                        <i class="bi bi-person-lock fs-3"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1">Campus Sign In</h3>
+                    <p class="text-muted small">Sign in to access your role-based portal</p>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label fw-semibold">Username</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                            <input type="text" name="username" class="form-control" id="id_username" placeholder="Enter username" required autofocus>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="id_password" class="form-label fw-semibold">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-lock"></i></span>
+                            <input type="password" name="password" class="form-control" id="id_password" placeholder="Enter password" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 font-semibold rounded-3 shadow-sm">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Log In
+                    </button>
+                </form>
+
+                <div class="text-center mt-3 small">
+                    {% if allow_public_student_registration %}Need a new student account? <a href="{% url 'accounts:register' %}" class="fw-bold text-success">Sign Up / Register Here</a>{% else %}Need an account? Contact your campus administrator.{% endif %}
+                </div>
+
+                <hr class="my-4">
+
+                <div class="bg-light p-3 rounded-3 border">
+                    <p class="fw-bold small mb-2 text-primary"><i class="bi bi-info-circle"></i> Quick Test Credentials:</p>
+                    <ul class="list-unstyled small mb-0 font-monospace text-secondary">
+                        <li><strong>Your Admin:</strong> sindhu861 / sindhu@861</li>
+                        <li><strong>Admin:</strong> admin / Admin@1234</li>
+                        <li><strong>Faculty:</strong> faculty_cse / Faculty@1234</li>
+                        <li><strong>Placement:</strong> placement_officer / Placement@1234</li>
+                        <li><strong>Student:</strong> stu2025001 / Student@1234</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

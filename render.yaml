@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: smart-campus-analytics
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+    healthCheckPath: /
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: localhost,127.0.0.1
+      - key: DATABASE_URL
+        fromDatabase:
+          name: smart-campus-analytics-db
+          property: connectionString
+      - key: ALLOW_PUBLIC_STUDENT_REGISTRATION
+        value: "False"
+      - key: TIME_ZONE
+        value: Asia/Kolkata
+      - key: SECURE_SSL_REDIRECT
+        value: "True"
+      - key: SESSION_COOKIE_SECURE
+        value: "True"
+      - key: CSRF_COOKIE_SECURE
+        value: "True"
+      - key: USE_X_FORWARDED_HOST
+        value: "True"
+databases:
+  - name: smart-campus-analytics-db
+    plan: basic-256mb
+    databaseName: smart_campus_analytics
+    user: smart_campus_analytics

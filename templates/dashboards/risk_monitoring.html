@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}At-Risk Student Workspace - Smart Campus Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h2 class="fw-bold mb-1 text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i> At-Risk Student Workspace</h2>
+        <p class="text-muted mb-0">Prioritized risk monitoring dashboard with explainable diagnostic flags and automated email advisory alerts.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        {% if critical_count or high_count %}
+            <button type="button" class="btn btn-danger rounded-pill fw-semibold shadow-sm px-3" data-bs-toggle="modal" data-bs-target="#batchAlertModal">
+                <i class="bi bi-envelope-fill me-1"></i> Send Batch Alert Emails ({{ critical_count|add:high_count }})
+            </button>
+        {% endif %}
+        <a href="{% url 'analytics:csv_risk_checker' %}" class="btn btn-outline-danger rounded-pill fw-semibold shadow-sm px-3">
+            <i class="bi bi-file-earmark-arrow-up me-1"></i> Check CSV for Student Risk
+        </a>
+    </div>
+</div>
+
+<!-- Risk Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card card-stats p-3 border-start border-4 border-dark">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small">Critical Risk Students</div>
+                    <h3 class="fw-bold text-dark mb-0">{{ critical_count }}</h3>
+                </div>
+                <div class="stat-icon bg-dark text-white">
+                    <i class="bi bi-shield-x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card card-stats p-3 border-start border-4 border-danger">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small">High Risk Students</div>
+                    <h3 class="fw-bold text-danger mb-0">{{ high_count }}</h3>
+                </div>
+                <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+                    <i class="bi bi-exclamation-octagon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- At-Risk Table -->
+<div class="card card-stats p-4">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Student</th>
+                    <th>Department</th>
+                    <th>Risk Category</th>
+                    <th>Overall Score</th>
+                    <th>Triggering Risk Factors</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for snapshot in snapshots %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold">{{ snapshot.student.full_name }}</div>
+                            <span class="small text-muted font-monospace">{{ snapshot.student.student_id }}</span>
+                            {% if snapshot.student.email %}
+                                <div class="small text-muted"><i class="bi bi-envelope me-1"></i>{{ snapshot.student.email }}</div>
+                            {% endif %}
+                        </td>
+                        <td><span class="badge bg-light text-dark border">{{ snapshot.student.department.code }}</span></td>
+                        <td>
+                            {% if snapshot.academic_risk_level == 'CRITICAL' %}
+                                <span class="badge bg-dark">Critical Risk</span>
+                            {% else %}
+                                <span class="badge bg-danger">High Risk</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold text-danger">{{ snapshot.overall_success_score }} / 100</td>
+                        <td class="small">
+                            {% for flag in snapshot.explanation_json.risk_flags %}
+                                <div class="text-danger"><i class="bi bi-x-circle me-1"></i> {{ flag }}</div>
+                            {% empty %}
+                                <div class="text-muted">Low composite score.</div>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1 flex-wrap">
+                                <a href="{% url 'analytics:student_detail' student_id=snapshot.student.student_id %}" class="btn btn-sm btn-outline-secondary rounded-pill">
+                                    <i class="bi bi-eye me-1"></i> Review
+                                </a>
+                                <button type="button" class="btn btn-sm btn-danger rounded-pill px-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#alertModal{{ snapshot.student.student_id }}">
+                                    <i class="bi bi-envelope-exclamation me-1"></i> Send Alert
+                                </button>
+                            </div>
+
+                            <!-- Modal: Individual Alert -->
+                            <div class="modal fade" id="alertModal{{ snapshot.student.student_id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <form method="post" action="{% url 'analytics:send_risk_alert' student_id=snapshot.student.student_id %}">
+                                            {% csrf_token %}
+                                            <div class="modal-header bg-danger text-white">
+                                                <h5 class="modal-title fw-bold">
+                                                    <i class="bi bi-envelope-exclamation me-2"></i> Send Risk Alert Email
+                                                </h5>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="alert alert-warning small mb-3">
+                                                    <i class="bi bi-info-circle me-1"></i>
+                                                    This will dispatch an official advisory email directly to <strong>{{ snapshot.student.full_name }}</strong> (<code>{{ snapshot.student.email }}</code>) and automatically log an in-progress counseling intervention.
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-semibold small text-muted">Recipient Student</label>
+                                                    <div class="p-2 bg-light rounded border">
+                                                        <div class="fw-bold text-dark">{{ snapshot.student.full_name }} ({{ snapshot.student.student_id }})</div>
+                                                        <div class="small text-muted">{{ snapshot.student.department.name }} &bull; Semester {{ snapshot.student.current_semester }}</div>
+                                                        <div class="badge bg-danger mt-1">{{ snapshot.academic_risk_level }} RISK &bull; Score: {{ snapshot.overall_success_score }}/100</div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-semibold small text-muted">Identified Risk Factors Included in Alert</label>
+                                                    <ul class="list-unstyled mb-0 small bg-light p-2 rounded border text-danger">
+                                                        {% for flag in snapshot.explanation_json.risk_flags %}
+                                                            <li><i class="bi bi-dash-circle me-1"></i> {{ flag }}</li>
+                                                        {% empty %}
+                                                            <li><i class="bi bi-dash-circle me-1"></i> Academic performance below safety threshold</li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-semibold small">Optional Counselor Guidance Note</label>
+                                                    <textarea name="custom_note" class="form-control" rows="3" placeholder="e.g., Please meet me in Block B, Room 204 on Tuesday at 11 AM to discuss your remedial plan."></textarea>
+                                                    <div class="form-text small">This note will be prominently highlighted in the student's email advisory.</div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary rounded-pill btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-danger rounded-pill btn-sm fw-semibold">
+                                                    <i class="bi bi-send me-1"></i> Send Risk Alert Now
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-success">
+                            <i class="bi bi-check-circle fs-3 d-block mb-2"></i>
+                            No high or critical risk students detected.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Batch Alert -->
+{% if critical_count or high_count %}
+<div class="modal fade" id="batchAlertModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'analytics:send_batch_risk_alerts' %}">
+                {% csrf_token %}
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-envelope-paper-fill me-2"></i> Dispatch Batch Risk Alerts
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger small mb-3">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                        You are about to dispatch personalized risk email advisories to <strong>all {{ critical_count|add:high_count }} at-risk students</strong> in this view.
+                    </div>
+                    <div class="p-3 bg-light rounded border mb-3 small">
+                        <div><strong>Critical Risk:</strong> {{ critical_count }} students</div>
+                        <div><strong>High Risk:</strong> {{ high_count }} students</div>
+                        <div class="text-muted mt-1">Each student receives an email customized with their specific risk flags and recommended academic intervention steps.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Optional Institution-wide Guidance Note</label>
+                        <textarea name="custom_note" class="form-control" rows="3" placeholder="e.g., Mandatory remedial counseling sessions are starting this Thursday. Please register with your department coordinator."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary rounded-pill btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger rounded-pill btn-sm fw-semibold">
+                        <i class="bi bi-send-fill me-1"></i> Dispatch {{ critical_count|add:high_count }} Alerts
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

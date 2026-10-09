@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}User Profile - Smart Campus Analytics{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card card-stats p-4">
+            <div class="d-flex align-items-center gap-3 border-bottom pb-3 mb-4">
+                <div class="stat-icon bg-primary text-white" style="width: 60px; height: 60px;">
+                    <i class="bi bi-person-circle fs-2"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-0">{{ user.username }}</h3>
+                    <span class="badge badge-role role-{{ user.role|lower }}">{{ user.get_role_display }}</span>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-6">
+                    <label class="text-muted small">Email Address</label>
+                    <div class="fw-semibold">{{ user.email|default:"N/A" }}</div>
+                </div>
+                <div class="col-6">
+                    <label class="text-muted small">Department</label>
+                    <div class="fw-semibold">{{ user.department_name|default:"Institutional Wide" }}</div>
+                </div>
+                <div class="col-6">
+                    <label class="text-muted small">Phone</label>
+                    <div class="fw-semibold">{{ user.phone_number|default:"Not specified" }}</div>
+                </div>
+                <div class="col-6">
+                    <label class="text-muted small">Account Status</label>
+                    <div><span class="badge bg-success">Active</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

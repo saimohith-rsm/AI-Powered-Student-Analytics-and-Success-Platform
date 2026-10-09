@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Faculty Intelligence Portal - Smart Campus Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-person-badge text-purple me-2"></i> Faculty Academic & Risk Portal</h2>
+        <p class="text-muted mb-0">Monitor department academic records, student attendance, and assign academic interventions.</p>
+    </div>
+    <span class="badge badge-role role-faculty fs-6">Faculty View</span>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card card-stats p-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-journal-bookmark text-primary me-2"></i> Assigned Department</h5>
+            <p class="text-muted">Computer Science & Engineering (CSE)</p>
+            <div class="badge bg-primary-subtle text-primary">Active Faculty Assignment</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-stats p-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-person-exclamation text-warning me-2"></i> Risk Alerts</h5>
+            <p class="text-muted">Students identified needing immediate tutoring or attendance counseling.</p>
+            <span class="badge bg-warning text-dark">Action Required</span>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-stats p-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-file-earmark-text text-success me-2"></i> Intervention History</h5>
+            <p class="text-muted">Record follow-up actions and log outcome notes.</p>
+            <span class="badge bg-success">Closed-Loop Ready</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
