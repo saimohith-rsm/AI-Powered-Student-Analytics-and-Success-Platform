@@ -41,12 +41,23 @@ class UserLogoutView(LogoutView):
 class UserRegisterView(View):
     template_name = 'accounts/register.html'
 
+    def get_departments(self):
+        try:
+            return list(Department.objects.all())
+        except Exception:
+            try:
+                from config.db_init import ensure_database_initialized
+                ensure_database_initialized()
+                return list(Department.objects.all())
+            except Exception:
+                return []
+
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             return redirect('accounts:dashboard_redirect')
         if not settings.ALLOW_PUBLIC_STUDENT_REGISTRATION:
             raise PermissionDenied("Public registration is disabled. Contact your campus administrator.")
-        departments = Department.objects.all()
+        departments = self.get_departments()
         return render(request, self.template_name, {'departments': departments})
 
     def post(self, request, *args, **kwargs):
@@ -62,31 +73,31 @@ class UserRegisterView(View):
 
         if not username or not password:
             messages.error(request, "Username and password are required.")
-            return render(request, self.template_name, {'departments': Department.objects.all()})
+            return render(request, self.template_name, {'departments': self.get_departments()})
         if len(username) > 150 or len(first_name) > 150 or len(last_name) > 150:
             messages.error(request, "Username and name fields must be within their supported length limits.")
-            return render(request, self.template_name, {'departments': Department.objects.all()})
+            return render(request, self.template_name, {'departments': self.get_departments()})
         if email:
             try:
                 validate_email(email)
             except ValidationError:
                 messages.error(request, "Please enter a valid email address.")
-                return render(request, self.template_name, {'departments': Department.objects.all()})
+                return render(request, self.template_name, {'departments': self.get_departments()})
         try:
             validate_password(password)
         except ValidationError as exc:
             for error in exc.messages:
                 messages.error(request, error)
-            return render(request, self.template_name, {'departments': Department.objects.all()})
+            return render(request, self.template_name, {'departments': self.get_departments()})
 
         if User.objects.filter(username=username).exists():
             messages.error(request, f"Username '{username}' is already taken. Please choose another username.")
-            return render(request, self.template_name, {'departments': Department.objects.all()})
+            return render(request, self.template_name, {'departments': self.get_departments()})
 
         profile_email = email or f"{username}@campus.edu"
         if User.objects.filter(email=profile_email).exists() or StudentProfile.objects.filter(email=profile_email).exists():
             messages.error(request, f"Email '{profile_email}' is already registered.")
-            return render(request, self.template_name, {'departments': Department.objects.all()})
+            return render(request, self.template_name, {'departments': self.get_departments()})
 
         # Security: Public self-registration is strictly restricted to STUDENT role.
         # Faculty, Placement, and Admin accounts must be created by an existing Administrator.
@@ -105,7 +116,7 @@ class UserRegisterView(View):
         if StudentProfile.objects.filter(student_id=student_id).exists():
             user.delete()
             messages.error(request, "That student ID is already registered. Please use your assigned student ID.")
-            return render(request, self.template_name, {'departments': Department.objects.all()})
+            return render(request, self.template_name, {'departments': self.get_departments()})
         dept = Department.objects.filter(id=dept_id).first() if dept_id else Department.objects.first()
         if not dept:
             dept = Department.objects.create(code='CSE', name='Computer Science & Engineering')
