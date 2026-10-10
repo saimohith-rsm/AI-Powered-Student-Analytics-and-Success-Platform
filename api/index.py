@@ -9,19 +9,20 @@ if str(BASE_DIR) not in sys.path:
 
 from config.wsgi import application  # noqa: E402
 from django.core.management import call_command  # noqa: E402
+from django.db import connection  # noqa: E402
 
 # Serverless startup hook for Vercel
-# If keeping SQLite temporarily, automatically migrate and initialize tables on container cold start
-if os.getenv("VERCEL") and not os.getenv("DATABASE_URL"):
-    marker_file = "/tmp/.db_initialized"
-    if not os.path.exists(marker_file):
-        try:
+# Ensures database tables and seed data exist on cold start (whether SQLite in /tmp or fresh Cloud Postgres)
+if os.getenv("VERCEL"):
+    try:
+        tables = connection.introspection.table_names()
+        if "accounts_user" not in tables:
+            print("[Vercel Startup] Missing tables detected. Executing migrations...", file=sys.stderr)
             call_command("migrate", interactive=False)
             call_command("generate_sample_data", count=40)
             call_command("run_analytics_engine")
-            with open(marker_file, "w") as f:
-                f.write("ready")
-        except Exception as exc:
-            print(f"[Vercel Startup] Initialization failed: {exc}", file=sys.stderr)
+            print("[Vercel Startup] Database successfully initialized with demo records!", file=sys.stderr)
+    except Exception as exc:
+        print(f"[Vercel Startup] Database initialization warning: {exc}", file=sys.stderr)
 
 app = application
