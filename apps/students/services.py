@@ -26,6 +26,158 @@ User = get_user_model()
 class DataImportService:
     """Validate and import a combined student dataset from CSV or Excel."""
 
+    SYNONYM_MAP = {
+        "studentid": "student_id",
+        "student_id": "student_id",
+        "student id": "student_id",
+        "roll_no": "student_id",
+        "rollno": "student_id",
+        "usn": "student_id",
+        "id": "student_id",
+        "student_name": "name",
+        "studentname": "name",
+        "student name": "name",
+        "full_name": "name",
+        "fullname": "name",
+        "dept": "department",
+        "branch": "department",
+        "department_name": "department",
+        "dept_name": "department",
+        "sem": "semester",
+        "gpa": "cgpa",
+        "sgpa": "cgpa",
+        "attendance": "attendance_percentage",
+        "attendance_pct": "attendance_percentage",
+        "attendance%": "attendance_percentage",
+        "attendance_percentage": "attendance_percentage",
+        "backlogs": "backlog_count",
+        "backlog": "backlog_count",
+        "backlog_count": "backlog_count",
+        "arrears": "backlog_count",
+        "lms_logins": "lms_login_frequency",
+        "login_frequency": "lms_login_frequency",
+        "lms_login_frequency": "lms_login_frequency",
+        "lms_completion": "assignment_completion_percentage",
+        "lms_completion_percentage": "assignment_completion_percentage",
+        "lms_completion_pct": "assignment_completion_percentage",
+        "assignment_completion": "assignment_completion_percentage",
+        "assignment_completion_pct": "assignment_completion_percentage",
+        "assignment_completion_percentage": "assignment_completion_percentage",
+        "assignments": "assignment_completion_percentage",
+        "coding": "coding_score",
+        "coding_score": "coding_score",
+        "aptitude": "aptitude_score",
+        "aptitude_score": "aptitude_score",
+        "interview": "mock_interview_score",
+        "mock_interview": "mock_interview_score",
+        "mock_interview_score": "mock_interview_score",
+        "resume": "resume_readiness_score",
+        "resume_score": "resume_readiness_score",
+        "resume_readiness_score": "resume_readiness_score",
+        "communication": "communication_score",
+        "communication_score": "communication_score",
+        "tech_skills": "technical_skill_score",
+        "technical_skill": "technical_skill_score",
+        "technical_skills": "technical_skill_score",
+        "technical_skill_score": "technical_skill_score",
+        "soft_skills": "soft_skill_score",
+        "soft_skill": "soft_skill_score",
+        "soft_skill_score": "soft_skill_score",
+        "engagement": "engagement_score",
+        "engagement_score": "engagement_score",
+        "feedback": "feedback_score",
+        "feedback_score": "feedback_score",
+    }
+
+    @classmethod
+    def _resolve_department(cls, raw_value) -> tuple[str, str]:
+        """
+        Resolves a raw department string (code, abbreviation, or full name)
+        into a valid (dept_code, dept_name) tuple.
+        Guarantees dept_code matches [A-Z0-9_-]{1,20}.
+        """
+        val = str(raw_value).strip() if raw_value is not None and not pd.isna(raw_value) else ""
+        if not val or val.upper() in {"GENERAL", "NONE", "NAN", "NULL", ""}:
+            return "GENERAL", "Department of GENERAL"
+
+        val_upper = val.upper()
+        # Cleaned alphanumeric string without spaces or punctuation
+        val_clean = re.sub(r"[^A-Z0-9]", "", val_upper)
+
+        KNOWN_ALIASES = {
+            "CSE": ("CSE", "Computer Science & Engineering"),
+            "CS": ("CSE", "Computer Science & Engineering"),
+            "COMPUTERSCIENCE": ("CSE", "Computer Science & Engineering"),
+            "COMPUTERSCIENCEENGINEERING": ("CSE", "Computer Science & Engineering"),
+            "COMPUTERSCIENCEANDENGINEERING": ("CSE", "Computer Science & Engineering"),
+            "ECE": ("ECE", "Electronics & Communication"),
+            "EC": ("ECE", "Electronics & Communication"),
+            "ELECTRONICSCOMMUNICATION": ("ECE", "Electronics & Communication"),
+            "ELECTRONICSANDCOMMUNICATION": ("ECE", "Electronics & Communication"),
+            "ELECTRONICSCOMMUNICATIONENGINEERING": ("ECE", "Electronics & Communication"),
+            "ELECTRONICSANDCOMMUNICATIONENGINEERING": ("ECE", "Electronics & Communication"),
+            "EEE": ("EEE", "Electrical & Electronics"),
+            "EE": ("EEE", "Electrical & Electronics"),
+            "ELECTRICALELECTRONICS": ("EEE", "Electrical & Electronics"),
+            "ELECTRICALANDELECTRONICS": ("EEE", "Electrical & Electronics"),
+            "ELECTRICALELECTRONICSENGINEERING": ("EEE", "Electrical & Electronics"),
+            "ELECTRICALANDELECTRONICSENGINEERING": ("EEE", "Electrical & Electronics"),
+            "MECH": ("MECH", "Mechanical Engineering"),
+            "ME": ("MECH", "Mechanical Engineering"),
+            "MECHANICAL": ("MECH", "Mechanical Engineering"),
+            "MECHANICALENGINEERING": ("MECH", "Mechanical Engineering"),
+            "IT": ("IT", "Information Technology"),
+            "INFORMATIONTECHNOLOGY": ("IT", "Information Technology"),
+            "CIVIL": ("CIVIL", "Civil Engineering"),
+            "CE": ("CIVIL", "Civil Engineering"),
+            "CIVILENGINEERING": ("CIVIL", "Civil Engineering"),
+            "AIDS": ("AI_DS", "Artificial Intelligence & Data Science"),
+            "ARTIFICIALINTELLIGENCEDATASCIENCE": ("AI_DS", "Artificial Intelligence & Data Science"),
+            "ARTIFICIALINTELLIGENCEANDDATASCIENCE": ("AI_DS", "Artificial Intelligence & Data Science"),
+            "AIML": ("AI_ML", "Artificial Intelligence & Machine Learning"),
+            "ARTIFICIALINTELLIGENCEMACHINELEARNING": ("AI_ML", "Artificial Intelligence & Machine Learning"),
+            "DS": ("DS", "Data Science"),
+            "DATASCIENCE": ("DS", "Data Science"),
+            "CYBER": ("CYBER", "Cyber Security"),
+            "CYBERSECURITY": ("CYBER", "Cyber Security"),
+            "BIOTECH": ("BIOTECH", "Biotechnology"),
+            "BIOTECHNOLOGY": ("BIOTECH", "Biotechnology"),
+            "CHEMICAL": ("CHEM", "Chemical Engineering"),
+            "CHEMICALENGINEERING": ("CHEM", "Chemical Engineering"),
+            "AERO": ("AERO", "Aeronautical Engineering"),
+            "AEROSPACE": ("AERO", "Aerospace Engineering"),
+            "AUTOMOBILE": ("AUTO", "Automobile Engineering"),
+        }
+
+        if val_clean in KNOWN_ALIASES:
+            return KNOWN_ALIASES[val_clean]
+
+        # Check existing departments in the database by code or name
+        dept = (
+            Department.objects.filter(code__iexact=val).first()
+            or Department.objects.filter(name__iexact=val).first()
+            or Department.objects.filter(name__icontains=val).first()
+        )
+        if dept:
+            return dept.code, dept.name
+
+        # Valid short code (1 to 20 alphanumeric, hyphen, underscore)
+        if re.fullmatch(r"[A-Z0-9_-]{1,20}", val_upper):
+            return val_upper, f"Department of {val_upper}"
+
+        # Multi-word string: generate code from initials (e.g. "Robotics & Automation" -> "RA")
+        words = [w for w in re.split(r"[\s&_\-]+", val_upper) if w and w not in {"AND", "OF", "&", "THE", "DEPARTMENT"}]
+        initials = "".join(w[0] for w in words if w[0].isalnum())
+        if 2 <= len(initials) <= 10:
+            return initials, val[:150]
+
+        # Sanitize directly
+        sanitized = re.sub(r"[^A-Z0-9_-]", "", val_upper.replace(" ", "_"))[:20]
+        if sanitized:
+            return sanitized, val[:150]
+
+        return "GENERAL", "General Department"
+
     @staticmethod
     def _value(row, key, default=""):
         value = row.get(key, default)
@@ -68,7 +220,8 @@ class DataImportService:
             raise ValueError("Unsupported file format. Please provide a CSV or Excel file.")
         if df.empty:
             return {"imported_count": 0, "errors": ["The uploaded file contains no records."]}
-        df.columns = [str(column).strip().lower() for column in df.columns]
+        raw_cols = [str(column).strip().lower() for column in df.columns]
+        df.columns = [cls.SYNONYM_MAP.get(c, cls.SYNONYM_MAP.get(c.replace(" ", "_").replace("-", "_"), c)) for c in raw_cols]
         if "student_id" not in df.columns:
             raise ValueError("Required column missing: student_id")
 
@@ -101,10 +254,8 @@ class DataImportService:
                 first_name = name.split()[0] if name else "Student"
                 last_name = " ".join(name.split()[1:]) if len(name.split()) > 1 else student_id
                 email = str(cls._value(row, "email", f"{student_id.lower()}@campus.edu")).strip()
-                dept_code = str(cls._value(row, "department", "GENERAL")).strip().upper() or "GENERAL"
-                if not re.fullmatch(r"[A-Z0-9_-]{1,20}", dept_code):
-                    errors.append(f"Row {row_num}: Department code must contain 1–20 letters, numbers, underscores, or hyphens.")
-                    continue
+                dept_raw = cls._value(row, "department", "GENERAL")
+                dept_code, dept_display_name = cls._resolve_department(dept_raw)
                 semester_number = cls._number(row, "semester", 1, 1, 8, row_num, errors, integer=True) if "semester" in df.columns else 1
                 admission_default = max(2000, current_year - semester_number // 2) if semester_number is not None else current_year
                 admission_year = cls._number(row, "admission_year", admission_default, 2000, current_year, row_num, errors, integer=True) if "admission_year" in df.columns else admission_default
@@ -140,11 +291,11 @@ class DataImportService:
 
                 row_dept, _ = Department.objects.get_or_create(
                     code=dept_code,
-                    defaults={"name": f"Department of {dept_code}"},
+                    defaults={"name": dept_display_name},
                 )
                 row_program, _ = Program.objects.get_or_create(
                     code=f"{dept_code}-BTECH",
-                    defaults={"name": f"B.Tech in {dept_code}", "department": row_dept},
+                    defaults={"name": f"B.Tech in {dept_display_name}", "department": row_dept},
                 )
                 student, _created = StudentProfile.objects.update_or_create(
                     student_id=student_id,

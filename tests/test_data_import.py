@@ -119,3 +119,31 @@ class DataImportServiceTests(TestCase):
             self.assertEqual(resp.context["imported_count"], 1)
             self.assertTrue(StudentProfile.objects.filter(student_id="STU_TMP_99").exists())
 
+    def test_import_with_full_department_names_and_column_synonyms(self):
+        csv_text = (
+            "student_id,name,department,semester,cgpa,attendance,backlogs,lms_completion,coding_score\n"
+            "CS2023801,Alok Nath,Computer Science & Engineering,4,9.15,92.5,0,95,82\n"
+            "CS2023802,Bhavna Menon,Computer Science & Engineering,4,5.6,62,2,45,38\n"
+            "IT2023803,Chirag Deshmukh,Information Technology,4,8.4,68,0,82,75\n"
+            "EC2022804,Deepa Varma,Electronics & Communication,6,8.75,88,0,90,44\n"
+            "ME2023805,Farhan Zaidi,Mechanical Engineering,4,6.95,78.5,0,70,55\n"
+        )
+        handle = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", newline="", encoding="utf-8", delete=False)
+        self.addCleanup(lambda: Path(handle.name).unlink(missing_ok=True))
+        handle.write(csv_text)
+        handle.close()
+
+        result = DataImportService.import_from_file(handle.name)
+        self.assertEqual(result["imported_count"], 5)
+        self.assertEqual(len(result["errors"]), 0)
+
+        # Check resolved department codes
+        s1 = StudentProfile.objects.get(student_id="CS2023801")
+        self.assertEqual(s1.department.code, "CSE")
+        s3 = StudentProfile.objects.get(student_id="IT2023803")
+        self.assertEqual(s3.department.code, "IT")
+        s4 = StudentProfile.objects.get(student_id="EC2022804")
+        self.assertEqual(s4.department.code, "ECE")
+        s5 = StudentProfile.objects.get(student_id="ME2023805")
+        self.assertEqual(s5.department.code, "MECH")
+
