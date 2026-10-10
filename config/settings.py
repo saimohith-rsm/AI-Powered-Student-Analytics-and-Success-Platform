@@ -106,7 +106,19 @@ if not DATABASE_URL:
         DATABASE_URL = "sqlite:////tmp/db.sqlite3"
     else:
         DATABASE_URL = f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
-DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=int(os.getenv("DB_CONN_MAX_AGE", "60")), ssl_require=env_bool("DB_SSL_REQUIRE", False))}
+
+is_postgres = DATABASE_URL.startswith("postgres://") or DATABASE_URL.startswith("postgresql://")
+default_conn_max_age = "0" if os.getenv("VERCEL") else "60"
+conn_max_age = int(os.getenv("DB_CONN_MAX_AGE", default_conn_max_age))
+ssl_require = env_bool("DB_SSL_REQUIRE", True if is_postgres else False)
+
+DATABASES = {
+    "default": dj_database_url.parse(
+        DATABASE_URL,
+        conn_max_age=conn_max_age,
+        ssl_require=ssl_require,
+    )
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
