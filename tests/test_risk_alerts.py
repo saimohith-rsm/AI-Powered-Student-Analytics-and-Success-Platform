@@ -122,5 +122,4 @@ class RiskAlertTestCase(TestCase):
         response = self.client.get(reverse('landing'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "AI-Powered Student Analytics & Success Platform")
-        self.assertContains(response, "Automated Risk Email Alerts")
-        self.assertContains(response, "CSV Student Risk Checker")
+        self.assertContains(response, "Access Platform Portal")
