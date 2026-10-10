@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     buildCommand: bash ./build.sh
-    startCommand: python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+    startCommand: python manage.py migrate --noinput && python manage.py generate_sample_data --count 40 && python manage.py run_analytics_engine && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60
     healthCheckPath: /
     envVars:
       - key: SECRET_KEY

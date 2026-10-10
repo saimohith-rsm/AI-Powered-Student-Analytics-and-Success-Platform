@@ -16,4 +16,4 @@ COPY --chown=app:app . .
 RUN SECRET_KEY=build-time-secret-key-not-used-in-production python manage.py collectstatic --noinput
 USER app
 EXPOSE 8000
-CMD ["sh", "-c", "python manage.py migrate --noinput && exec gunicorn config.wsgi:application --bind 0.0.0.0:${PORT} --workers ${WEB_CONCURRENCY:-2} --timeout 60 --access-logfile - --error-logfile -"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py generate_sample_data --count 40 && python manage.py run_analytics_engine && exec gunicorn config.wsgi:application --bind 0.0.0.0:${PORT} --workers ${WEB_CONCURRENCY:-2} --timeout 60 --access-logfile - --error-logfile -"]

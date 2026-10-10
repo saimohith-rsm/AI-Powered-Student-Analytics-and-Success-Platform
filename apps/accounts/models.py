@@ -17,6 +17,11 @@ class User(AbstractUser):
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     department_name = models.CharField(max_length=100, blank=True, null=True)
 
+    def save(self, *args, **kwargs):
+        if (self.is_superuser or self.is_staff) and self.role == self.Role.STUDENT:
+            self.role = self.Role.ADMINISTRATOR
+        super().save(*args, **kwargs)
+
     def is_admin_user(self):
         return self.role == self.Role.ADMINISTRATOR or self.is_superuser
 
@@ -27,7 +32,7 @@ class User(AbstractUser):
         return self.role == self.Role.PLACEMENT_OFFICER or self.is_admin_user()
 
     def is_student_user(self):
-        return self.role == self.Role.STUDENT
+        return self.role == self.Role.STUDENT and not (self.is_superuser or self.is_staff)
 
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"

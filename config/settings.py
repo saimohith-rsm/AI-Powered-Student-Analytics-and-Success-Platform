@@ -26,24 +26,29 @@ def env_list(name: str, default: str = "") -> list[str]:
 DEBUG = env_bool("DEBUG", True)
 SECRET_KEY = os.getenv("SECRET_KEY", "")
 if not SECRET_KEY:
-    if DEBUG:
-        SECRET_KEY = "dev-only-insecure-key-change-before-deployment"
+    if DEBUG or "collectstatic" in sys.argv:
+        SECRET_KEY = "build-time-secret-key-placeholder-for-collectstatic"
     else:
         raise RuntimeError("SECRET_KEY must be set when DEBUG=False.")
 
-ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,testserver,.vercel.app,.onrender.com")
+ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,testserver,.vercel.app,.onrender.com,.up.railway.app")
 RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME", "").strip()
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 VERCEL_URL = os.getenv("VERCEL_URL", "").strip()
 if VERCEL_URL:
     ALLOWED_HOSTS.append(VERCEL_URL)
+RAILWAY_PUBLIC_DOMAIN = os.getenv("RAILWAY_PUBLIC_DOMAIN", "").strip()
+if RAILWAY_PUBLIC_DOMAIN:
+    ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
 
-CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS", "https://*.vercel.app,https://*.onrender.com")
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS", "https://*.vercel.app,https://*.onrender.com,https://*.up.railway.app")
 if RENDER_EXTERNAL_HOSTNAME:
     CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
 if VERCEL_URL:
     CSRF_TRUSTED_ORIGINS.append(f"https://{VERCEL_URL}")
+if RAILWAY_PUBLIC_DOMAIN:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{RAILWAY_PUBLIC_DOMAIN}")
 
 AUTH_USER_MODEL = "accounts.User"
 ALLOW_PUBLIC_STUDENT_REGISTRATION = env_bool("ALLOW_PUBLIC_STUDENT_REGISTRATION", DEBUG)
