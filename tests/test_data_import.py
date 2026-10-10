@@ -84,3 +84,38 @@ class DataImportServiceTests(TestCase):
         self.assertEqual(StudentSkillAssessment.objects.filter(student=student).count(), 2)
         self.assertTrue(StudentFeedback.objects.filter(student=student, satisfaction_score=4).exists())
 
+    def test_get_upload_temp_dir_fallback_when_media_root_read_only(self):
+        from unittest.mock import patch
+        from config.storage_utils import get_upload_temp_dir
+
+        with patch("config.storage_utils.settings") as mock_settings:
+            # Simulate unwritable /var/task/media
+            mock_settings.MEDIA_ROOT = "/var/task/media_non_writable_test"
+            temp_dir = get_upload_temp_dir("imports")
+            self.assertTrue(temp_dir.exists())
+            self.assertNotEqual(str(temp_dir), "/var/task/media_non_writable_test/imports")
+
+    def test_data_import_web_upload_view_works_with_unwritable_media_root(self):
+        from unittest.mock import patch
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from django.urls import reverse
+        from apps.accounts.models import User
+
+        admin_user = User.objects.create_user(
+            username='admin_import_tester',
+            password='Password@123',
+            role=User.Role.ADMINISTRATOR,
+            is_staff=True,
+            is_superuser=True
+        )
+        self.client.force_login(admin_user)
+        csv_content = b"student_id,name\nSTU_TMP_99,Temp Upload Student\n"
+        uploaded = SimpleUploadedFile("temp_roster.csv", csv_content, content_type="text/csv")
+
+        with patch("django.conf.settings.MEDIA_ROOT", "/var/task/media"):
+            resp = self.client.post(reverse("students:data_import"), {"dataset_file": uploaded})
+            self.assertEqual(resp.status_code, 200)
+            self.assertTrue(resp.context["import_completed"])
+            self.assertEqual(resp.context["imported_count"], 1)
+            self.assertTrue(StudentProfile.objects.filter(student_id="STU_TMP_99").exists())
+

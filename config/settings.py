@@ -143,7 +143,10 @@ STORAGES = {
     },
 }
 MEDIA_URL = "/media/"
-MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT", str(BASE_DIR / "media")))
+is_serverless = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
+default_media_root = "/tmp/media" if is_serverless else str(BASE_DIR / "media")
+MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT", default_media_root))
+FILE_UPLOAD_TEMP_DIR = "/tmp" if is_serverless else None
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "/accounts/login/"

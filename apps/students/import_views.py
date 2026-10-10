@@ -12,6 +12,7 @@ from django.shortcuts import redirect, render
 from django.views import View
 
 from apps.students.services import DataImportService
+from config.storage_utils import get_upload_temp_dir
 
 logger = logging.getLogger(__name__)
 MAX_IMPORT_BYTES = 5 * 1024 * 1024
@@ -47,12 +48,13 @@ class DataImportWebUploadView(LoginRequiredMixin, View):
             messages.error(request, "Unsupported file format. Upload a CSV or Excel (.xlsx, .xls) file.")
             return redirect("students:data_import")
 
-        import_dir = Path(settings.MEDIA_ROOT) / "imports"
-        import_dir.mkdir(parents=True, exist_ok=True)
-        storage = FileSystemStorage(location=str(import_dir))
-        filename = storage.save(original_name, dataset_file)
-        file_path = storage.path(filename)
+        file_path = None
         try:
+            import_dir = get_upload_temp_dir("imports")
+            storage = FileSystemStorage(location=str(import_dir))
+            filename = storage.save(original_name, dataset_file)
+            file_path = storage.path(filename)
+
             result = DataImportService.import_from_file(file_path)
             imported_count = result.get("imported_count", 0)
             errors = result.get("errors", [])
@@ -73,7 +75,8 @@ class DataImportWebUploadView(LoginRequiredMixin, View):
             messages.error(request, "Import failed due to an unexpected server error. Please contact the administrator.")
             return redirect("students:data_import")
         finally:
-            try:
-                os.remove(file_path)
-            except FileNotFoundError:
-                pass
+            if file_path:
+                try:
+                    os.remove(file_path)
+                except (OSError, FileNotFoundError):
+                    pass

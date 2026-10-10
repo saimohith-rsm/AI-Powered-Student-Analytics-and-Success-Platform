@@ -484,6 +484,7 @@ class CSVRiskCheckerAndImportView(BaseScopedQuerysetMixin, View):
         from apps.students.services import DataImportService
         from django.conf import settings
         from django.core.files.storage import FileSystemStorage
+        from config.storage_utils import get_upload_temp_dir
         from pathlib import Path
         import os
         import logging
@@ -507,14 +508,13 @@ class CSVRiskCheckerAndImportView(BaseScopedQuerysetMixin, View):
             messages.error(request, "Unsupported file format. Please upload a .csv, .xlsx, or .xls file.")
             return redirect("analytics:csv_risk_checker")
 
-        # Save to temp directory for processing
-        import_dir = Path(settings.MEDIA_ROOT) / "temp_risk_checks"
-        import_dir.mkdir(parents=True, exist_ok=True)
-        storage = FileSystemStorage(location=str(import_dir))
-        filename = storage.save(original_name, dataset_file)
-        file_path = storage.path(filename)
-
+        file_path = None
         try:
+            import_dir = get_upload_temp_dir("temp_risk_checks")
+            storage = FileSystemStorage(location=str(import_dir))
+            filename = storage.save(original_name, dataset_file)
+            file_path = storage.path(filename)
+
             # 1. Run in-memory Risk Analysis
             with open(file_path, "rb") as f:
                 analysis_results = CSVRiskCheckerService.analyze_file(f, filename=original_name)
@@ -562,10 +562,11 @@ class CSVRiskCheckerAndImportView(BaseScopedQuerysetMixin, View):
             messages.error(request, f"Error processing file: {exc}")
             return redirect("analytics:csv_risk_checker")
         finally:
-            try:
-                os.remove(file_path)
-            except (OSError, FileNotFoundError):
-                pass
+            if file_path:
+                try:
+                    os.remove(file_path)
+                except (OSError, FileNotFoundError):
+                    pass
 
 
 class DownloadSampleCSVTemplateView(LoginRequiredMixin, View):
