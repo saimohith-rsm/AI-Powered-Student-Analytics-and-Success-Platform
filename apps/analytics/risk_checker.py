@@ -312,6 +312,7 @@ class CSVRiskCheckerService:
         high_count = 0
         medium_count = 0
         low_count = 0
+        seen_student_ids = set()
 
         for idx, row in df.iterrows():
             row_num = idx + 2
@@ -321,6 +322,11 @@ class CSVRiskCheckerService:
                 continue
 
             student_id = str(sid_val).strip().upper()
+            if student_id in seen_student_ids:
+                errors.append(f"Row {row_num}: Duplicate student_id '{student_id}' found in uploaded file. Each student record must be unique.")
+                continue
+            seen_student_ids.add(student_id)
+
             name = str(row.get("name", "")).strip() if "name" in df.columns and not pd.isna(row.get("name")) else student_id
             dept = str(row.get("department", "GEN")).strip().upper() if "department" in df.columns and not pd.isna(row.get("department")) else "GEN"
             semester = cls._to_int(row.get("semester"), default=5)

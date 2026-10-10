@@ -17,6 +17,15 @@ class EngagementActivity(models.Model):
     event_date = models.DateField()
     organizer = models.CharField(max_length=150, blank=True, null=True)
 
+    class Meta:
+        ordering = ['-event_date']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title', 'category', 'event_date'],
+                name='unique_engagement_activity_event',
+            )
+        ]
+
     def __str__(self):
         return f"{self.title} ({self.category.name})"
 

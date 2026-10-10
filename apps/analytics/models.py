@@ -49,6 +49,12 @@ class StudentSuccessSnapshot(models.Model):
 
     class Meta:
         ordering = ['-snapshot_date', '-overall_success_score']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['student', 'snapshot_date'],
+                name='unique_student_snapshot_date',
+            )
+        ]
 
     def __str__(self):
         return f"{self.student.student_id} - Score: {self.overall_success_score} ({self.get_academic_risk_level_display()})"

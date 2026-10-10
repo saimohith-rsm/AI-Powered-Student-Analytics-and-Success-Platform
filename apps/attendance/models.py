@@ -14,6 +14,18 @@ class AttendanceRecord(models.Model):
 
     class Meta:
         ordering = ['student', 'semester', 'subject']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['student', 'semester', 'subject'],
+                condition=models.Q(subject__isnull=False),
+                name='unique_student_semester_subject_attendance',
+            ),
+            models.UniqueConstraint(
+                fields=['student', 'semester'],
+                condition=models.Q(subject__isnull=True),
+                name='unique_student_semester_overall_attendance',
+            ),
+        ]
 
     def clean(self):
         super().clean()

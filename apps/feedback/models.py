@@ -23,6 +23,15 @@ class StudentFeedback(models.Model):
     submitted_date = models.DateField(auto_now_add=True)
     is_confidential = models.BooleanField(default=False)
 
+    class Meta:
+        ordering = ['-submitted_date']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['student', 'category'],
+                name='unique_student_feedback_category',
+            )
+        ]
+
     def __str__(self):
         return f"Feedback: {self.student.student_id} -> {self.category.name} ({self.satisfaction_score}/5)"
 

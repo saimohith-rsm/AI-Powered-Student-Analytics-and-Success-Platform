@@ -55,6 +55,12 @@ class AssessmentResult(models.Model):
 
     class Meta:
         ordering = ['student', 'subject', 'assessment_name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['student', 'subject', 'semester', 'assessment_name'],
+                name='unique_student_subject_semester_assessment',
+            )
+        ]
 
     def clean(self):
         super().clean()

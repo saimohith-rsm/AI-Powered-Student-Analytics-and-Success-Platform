@@ -31,17 +31,8 @@ def ensure_database_initialized() -> bool:
             from django.db import connection
             from django.core.management import call_command
 
-            # Fast table check
-            existing_tables = set(connection.introspection.table_names())
-            needs_migration = (
-                "students_department" not in existing_tables
-                or "accounts_user" not in existing_tables
-            )
-
-            if needs_migration:
-                sys.stderr.write("[DB Init] Missing database tables detected. Running migrations...\n")
-                call_command("migrate", interactive=False)
-                sys.stderr.write("[DB Init] Migrations applied successfully.\n")
+            # Ensure all database migrations are applied
+            call_command("migrate", interactive=False)
 
             # Seed baseline departments, programs, and academic calendar if missing
             from apps.students.models import Department, Program, AcademicYear, Semester

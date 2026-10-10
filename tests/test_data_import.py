@@ -147,3 +147,29 @@ class DataImportServiceTests(TestCase):
         s5 = StudentProfile.objects.get(student_id="ME2023805")
         self.assertEqual(s5.department.code, "MECH")
 
+    def test_duplicate_student_id_in_file_is_rejected(self):
+        rows = [
+            {"student_id": "DUP001", "name": "First Student", "email": "first@campus.edu"},
+            {"student_id": "DUP001", "name": "Duplicate Student", "email": "duplicate@campus.edu"},
+        ]
+        path = self._csv_file(rows, ["student_id", "name", "email"])
+        result = DataImportService.import_from_file(path)
+
+        # Only the first student should be imported, the duplicate must be flagged in errors
+        self.assertEqual(result["imported_count"], 1)
+        self.assertTrue(any("Duplicate student_id" in err for err in result["errors"]))
+        self.assertEqual(StudentProfile.objects.filter(student_id="DUP001").count(), 1)
+        self.assertEqual(StudentProfile.objects.get(student_id="DUP001").first_name, "First")
+
+    def test_duplicate_email_in_file_is_rejected(self):
+        rows = [
+            {"student_id": "EMAIL001", "name": "Student One", "email": "shared@campus.edu"},
+            {"student_id": "EMAIL002", "name": "Student Two", "email": "shared@campus.edu"},
+        ]
+        path = self._csv_file(rows, ["student_id", "name", "email"])
+        result = DataImportService.import_from_file(path)
+
+        self.assertEqual(result["imported_count"], 1)
+        self.assertTrue(any("Duplicate email" in err for err in result["errors"]))
+        self.assertEqual(StudentProfile.objects.filter(email="shared@campus.edu").count(), 1)
+

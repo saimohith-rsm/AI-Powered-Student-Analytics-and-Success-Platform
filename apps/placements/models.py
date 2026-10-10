@@ -13,6 +13,12 @@ class PlacementAssessment(models.Model):
 
     class Meta:
         ordering = ['-assessment_date']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['student'],
+                name='unique_student_placement_assessment',
+            )
+        ]
 
     @property
     def overall_readiness_score(self):
@@ -41,6 +47,15 @@ class PlacementApplication(models.Model):
     status = models.CharField(max_length=20, choices=ApplicationStatus.choices, default=ApplicationStatus.APPLIED)
     package_lpa = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Package in LPA (Lakhs Per Annum)")
     applied_date = models.DateField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-applied_date']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['student', 'company_name', 'role_offered'],
+                name='unique_student_placement_application',
+            )
+        ]
 
     def __str__(self):
         return f"{self.student.student_id} -> {self.company_name} ({self.get_status_display()})"

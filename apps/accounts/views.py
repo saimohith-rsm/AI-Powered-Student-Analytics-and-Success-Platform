@@ -90,12 +90,12 @@ class UserRegisterView(View):
                 messages.error(request, error)
             return render(request, self.template_name, {'departments': self.get_departments()})
 
-        if User.objects.filter(username=username).exists():
+        if User.objects.filter(username__iexact=username).exists():
             messages.error(request, f"Username '{username}' is already taken. Please choose another username.")
             return render(request, self.template_name, {'departments': self.get_departments()})
 
         profile_email = email or f"{username}@campus.edu"
-        if User.objects.filter(email=profile_email).exists() or StudentProfile.objects.filter(email=profile_email).exists():
+        if User.objects.filter(email__iexact=profile_email).exists() or StudentProfile.objects.filter(email__iexact=profile_email).exists():
             messages.error(request, f"Email '{profile_email}' is already registered.")
             return render(request, self.template_name, {'departments': self.get_departments()})
 
@@ -113,7 +113,7 @@ class UserRegisterView(View):
         )
 
         student_id = student_id_input.upper() if student_id_input else f"STU{user.id:04d}"
-        if StudentProfile.objects.filter(student_id=student_id).exists():
+        if StudentProfile.objects.filter(student_id__iexact=student_id).exists():
             user.delete()
             messages.error(request, "That student ID is already registered. Please use your assigned student ID.")
             return render(request, self.template_name, {'departments': self.get_departments()})

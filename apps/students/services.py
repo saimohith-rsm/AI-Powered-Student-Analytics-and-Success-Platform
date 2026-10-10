@@ -238,6 +238,9 @@ class DataImportService:
                 )
             return academic_year
 
+        seen_student_ids = set()
+        seen_emails = set()
+
         with transaction.atomic():
             for idx, row in df.iterrows():
                 row_num = idx + 2
@@ -247,6 +250,10 @@ class DataImportService:
                 student_id = str(student_id_value).strip().upper()
                 if not student_id:
                     errors.append(f"Row {row_num}: Missing student_id.")
+                    continue
+
+                if student_id in seen_student_ids:
+                    errors.append(f"Row {row_num}: Duplicate student_id '{student_id}' found in uploaded file. Duplicate student records are not allowed.")
                     continue
 
                 name_value = cls._value(row, "name", "")
@@ -280,14 +287,24 @@ class DataImportService:
 
                 if not email:
                     email = f"{student_id.lower()}@campus.edu"
+                email_clean = email.strip()
+                email_lower = email_clean.lower()
+
+                if email_lower in seen_emails:
+                    errors.append(f"Row {row_num}: Duplicate email '{email_clean}' found in uploaded file. Each student record must have a unique email address.")
+                    continue
+
                 try:
-                    validate_email(email)
+                    validate_email(email_clean)
                 except ValidationError:
                     errors.append(f"Row {row_num}: Invalid email address.")
                     continue
-                if StudentProfile.objects.filter(email=email).exclude(student_id=student_id).exists():
+                if StudentProfile.objects.filter(email__iexact=email_clean).exclude(student_id=student_id).exists():
                     errors.append(f"Row {row_num}: Email address is already assigned to another student.")
                     continue
+
+                seen_student_ids.add(student_id)
+                seen_emails.add(email_lower)
 
                 row_dept, _ = Department.objects.get_or_create(
                     code=dept_code,
@@ -363,12 +380,14 @@ class DataImportService:
                     )
                 if feedback_score is not None:
                     category, _ = FeedbackCategory.objects.get_or_create(name="Imported Student Feedback")
-                    feedback = StudentFeedback.objects.filter(student=student, category=category).order_by("-submitted_date").first()
-                    if feedback:
-                        feedback.satisfaction_score = feedback_score
-                        feedback.save(update_fields=["satisfaction_score"])
-                    else:
-                        StudentFeedback.objects.create(student=student, category=category, satisfaction_score=feedback_score, is_confidential=True)
+                    StudentFeedback.objects.update_or_create(
+                        student=student,
+                        category=category,
+                        defaults={
+                            "satisfaction_score": feedback_score,
+                            "is_confidential": True,
+                        },
+                    )
 
                 if evaluate_analytics:
                     try:
