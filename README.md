@@ -4,7 +4,17 @@ An enterprise-ready, explainable AI-powered student success analytics and interv
 
 > **Live Production App:** [https://ai-powered-student-analytics-and-su-rho.vercel.app/](https://ai-powered-student-analytics-and-su-rho.vercel.app/)  
 > **Student Registration:** [/accounts/register/](https://ai-powered-student-analytics-and-su-rho.vercel.app/accounts/register/)  
-> **Campus Login:** [/accounts/login/](https://ai-powered-student-analytics-and-su-rho.vercel.app/accounts/login/) (Default Admin: `admin` / `Admin@12345`)
+> **Campus Login:** [/accounts/login/](https://ai-powered-student-analytics-and-su-rho.vercel.app/accounts/login/)
+
+### Default Demo Credentials
+
+| Role | Username | Password | Access Scope |
+| :--- | :--- | :--- | :--- |
+| **Administrator** | `sindhu861` | `sindhu@861` | Full Campus Analytics, Risk Monitoring, Interventions & User Admin |
+| **Administrator (System)** | `admin` | `Admin@1234` | Full Campus Analytics, Django Admin & System Config |
+| **Faculty (CSE)** | `faculty_cse` | `Faculty@1234` | CSE Department Students, At-Risk Advisory & Tutoring Interventions |
+| **Placement Officer** | `placement_officer` | `Placement@1234` | Placement Readiness, Coding Assessment Deficiencies & Drives |
+| **Student (Demo)** | `stu2025001` | `Student@1234` | Personal 360° Academic, Attendance & Success Portal |
 
 ---
 

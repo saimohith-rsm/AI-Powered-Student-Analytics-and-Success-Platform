@@ -70,20 +70,92 @@ def ensure_database_initialized() -> bool:
                         number=num, academic_year=acad_year, defaults={'is_active': (num == 5)}
                     )
 
-            # Ensure baseline superuser exists if none exists
+            # Ensure baseline demo accounts exist (Admin, Faculty, Placement, Student)
             from django.contrib.auth import get_user_model
+            from apps.students.models import FacultyAssignment, StudentProfile
             User = get_user_model()
-            if not User.objects.filter(is_superuser=True).exists():
-                admin_username = os.getenv("DJANGO_SUPERUSER_USERNAME", "admin")
-                admin_email = os.getenv("DJANGO_SUPERUSER_EMAIL", "admin@smartcampus.edu")
-                admin_password = os.getenv("DJANGO_SUPERUSER_PASSWORD", "Admin@12345")
-                User.objects.create_superuser(
-                    username=admin_username,
-                    email=admin_email,
-                    password=admin_password,
-                    role="ADMIN",
+
+            # 1. Primary Admin Account
+            admin_user, _ = User.objects.get_or_create(
+                username="admin",
+                defaults={
+                    "email": "admin@smartcampus.edu",
+                    "role": User.Role.ADMINISTRATOR,
+                    "is_staff": True,
+                    "is_superuser": True,
+                },
+            )
+            admin_user.set_password(os.getenv("DJANGO_SUPERUSER_PASSWORD", "Admin@1234"))
+            admin_user.save()
+
+            # 2. Custom Admin Account (sindhu861)
+            sindhu_user, _ = User.objects.get_or_create(
+                username="sindhu861",
+                defaults={
+                    "email": "sindhu861@smartcampus.edu",
+                    "role": User.Role.ADMINISTRATOR,
+                    "is_staff": True,
+                    "is_superuser": True,
+                },
+            )
+            sindhu_user.set_password("sindhu@861")
+            sindhu_user.save()
+
+            # 3. Faculty Account (faculty_cse)
+            cse_dept = Department.objects.filter(code="CSE").first()
+            faculty_user, _ = User.objects.get_or_create(
+                username="faculty_cse",
+                defaults={
+                    "email": "faculty@smartcampus.edu",
+                    "role": User.Role.FACULTY,
+                    "department_name": "CSE",
+                    "is_staff": True,
+                },
+            )
+            faculty_user.set_password("Faculty@1234")
+            faculty_user.save()
+            if cse_dept:
+                FacultyAssignment.objects.get_or_create(faculty_user=faculty_user, department=cse_dept)
+
+            # 4. Placement Officer (placement_officer)
+            placement_user, _ = User.objects.get_or_create(
+                username="placement_officer",
+                defaults={
+                    "email": "placement@smartcampus.edu",
+                    "role": User.Role.PLACEMENT_OFFICER,
+                    "is_staff": True,
+                },
+            )
+            placement_user.set_password("Placement@1234")
+            placement_user.save()
+
+            # 5. Demo Student Account (stu2025001)
+            stu_user, _ = User.objects.get_or_create(
+                username="stu2025001",
+                defaults={
+                    "email": "stu2025001@smartcampus.edu",
+                    "first_name": "Aarav",
+                    "last_name": "Sharma",
+                    "role": User.Role.STUDENT,
+                },
+            )
+            stu_user.set_password("Student@1234")
+            stu_user.save()
+            if cse_dept:
+                prog = cse_dept.programs.first()
+                StudentProfile.objects.get_or_create(
+                    student_id="STU2025001",
+                    defaults={
+                        "user": stu_user,
+                        "first_name": "Aarav",
+                        "last_name": "Sharma",
+                        "email": stu_user.email,
+                        "department": cse_dept,
+                        "program": prog,
+                        "admission_year": 2025,
+                        "current_semester": 5,
+                    },
                 )
-                sys.stderr.write(f"[DB Init] Created default admin account: {admin_username}\n")
 
             _initialized = True
             return True
