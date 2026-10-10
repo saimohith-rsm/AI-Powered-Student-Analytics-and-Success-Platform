@@ -2,6 +2,10 @@
 
 An enterprise-ready, explainable AI-powered student success analytics and intervention platform built with Django 5.2+. The platform unifies academic results, attendance tracking, LMS activity, placement readiness, skills assessments, and extracurricular engagement to compute explainable success scores, detect at-risk students, dispatch automated email advisories, and track closed-loop counseling workflows.
 
+> **Live Production App:** [https://ai-powered-student-analytics-and-su-rho.vercel.app/](https://ai-powered-student-analytics-and-su-rho.vercel.app/)  
+> **Student Registration:** [/accounts/register/](https://ai-powered-student-analytics-and-su-rho.vercel.app/accounts/register/)  
+> **Campus Login:** [/accounts/login/](https://ai-powered-student-analytics-and-su-rho.vercel.app/accounts/login/) (Default Admin: `admin` / `Admin@12345`)
+
 ---
 
 ## Key Features
