@@ -39,27 +39,27 @@ body {
 }
 
 /* Landing Page Hero */
-.landing-hero-wrapper {
-  background: radial-gradient(1200px 600px at 50% 0%, rgba(56, 189, 248, 0.15), transparent 70%),
-              radial-gradient(800px 500px at 80% 20%, rgba(99, 102, 241, 0.12), transparent 60%),
-              radial-gradient(600px 400px at 20% 40%, rgba(168, 85, 247, 0.08), transparent 60%),
-              #090d16;
-  color: #f8fafc;
+.hero-landing-wrapper {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 4.5rem 1rem;
   min-height: calc(100vh - 56px);
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
-  overflow: hidden;
-  padding: 3.5rem 1rem;
 }
 
-.hero-main-title {
-  font-size: clamp(2.2rem, 5vw, 3.4rem);
+.hero-title-main {
+  font-size: clamp(2.2rem, 5vw, 3.2rem);
   font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.15;
-  color: #ffffff;
+  letter-spacing: -0.025em;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.title-gradient-color {
+  background: linear-gradient(135deg, #1d4ed8 0%, #4f46e5 50%, #7c3aed 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Clean Feature Highlights */
