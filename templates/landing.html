@@ -2,29 +2,309 @@
 
 {% block title %}Smart Campus Analytics - AI Student Success Platform{% endblock %}
 
-{% block full_width_content %}
-<div class="hero-section landing-hero text-center">
-    <div class="container py-4" style="max-width: 820px;">
-        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fw-semibold mb-3">
-            Academic Intelligence & Early Intervention
-        </span>
+{% block extra_css %}
+<style>
+    /* Modern Dark Glassmorphic Hero Styling */
+    .landing-hero-wrapper {
+        background: radial-gradient(1200px 600px at 50% 0%, rgba(56, 189, 248, 0.15), transparent 70%),
+            radial-gradient(800px 500px at 80% 20%, rgba(99, 102, 241, 0.12), transparent 60%),
+            radial-gradient(600px 400px at 20% 40%, rgba(168, 85, 247, 0.08), transparent 60%),
+            #090d16;
+        color: #f8fafc;
+        min-height: calc(100vh - 56px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+        padding: 3.5rem 1rem;
+    }
 
-        <h1 class="hero-title mb-3">
+    /* Background grid subtle accent */
+    .landing-hero-wrapper::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        mask-image: radial-gradient(ellipse 60% 50% at 50% 30%, #000 60%, transparent 100%);
+        -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 30%, #000 60%, transparent 100%);
+        pointer-events: none;
+    }
+
+    .hero-pill-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 1rem;
+        background: rgba(30, 41, 59, 0.7);
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        border-radius: 9999px;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: #7dd3fc;
+        box-shadow: 0 0 20px rgba(56, 189, 248, 0.15);
+        backdrop-filter: blur(8px);
+    }
+
+    .live-pulse {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #38bdf8;
+        box-shadow: 0 0 8px #38bdf8;
+        animation: pulseGlow 2s infinite ease-in-out;
+    }
+
+    @keyframes pulseGlow {
+
+        0%,
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        50% {
+            opacity: 0.4;
+            transform: scale(0.85);
+        }
+    }
+
+    .hero-main-title {
+        font-size: clamp(2.2rem, 5vw, 3.4rem);
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1.15;
+        color: #ffffff;
+        margin-top: 1.25rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .gradient-accent {
+        background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .hero-lead-text {
+        font-size: clamp(1rem, 2vw, 1.18rem);
+        color: #94a3b8;
+        max-width: 680px;
+        margin: 0 auto 2.25rem;
+        line-height: 1.6;
+    }
+
+    /* Button enhancements */
+    .btn-cta-primary {
+        background: linear-gradient(135deg, #2563eb, #4f46e5);
+        color: #ffffff !important;
+        border: none;
+        padding: 0.8rem 1.8rem;
+        border-radius: 10px;
+        font-weight: 600;
+        box-shadow: 0 4px 18px rgba(37, 99, 235, 0.35);
+        transition: all 0.25s ease;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .btn-cta-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(37, 99, 235, 0.5);
+        background: linear-gradient(135deg, #1d4ed8, #4338ca);
+    }
+
+    .btn-cta-glass {
+        background: rgba(255, 255, 255, 0.06);
+        color: #f1f5f9 !important;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 0.8rem 1.8rem;
+        border-radius: 10px;
+        font-weight: 600;
+        backdrop-filter: blur(8px);
+        transition: all 0.25s ease;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .btn-cta-glass:hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+        color: #ffffff !important;
+    }
+
+    /* Glassmorphic Showcase Dashboard Preview */
+    .hero-glass-card {
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        backdrop-filter: blur(16px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+        max-width: 780px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .card-status-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+
+    .window-dots {
+        display: flex;
+        gap: 6px;
+    }
+
+    .window-dots span {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .dot-red {
+        background-color: #ef4444;
+    }
+
+    .dot-yellow {
+        background-color: #f59e0b;
+    }
+
+    .dot-green {
+        background-color: #10b981;
+    }
+
+    .stat-widget {
+        background: rgba(30, 41, 59, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 1rem 0.75rem;
+        text-align: center;
+        transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .stat-widget:hover {
+        transform: translateY(-2px);
+        border-color: rgba(56, 189, 248, 0.3);
+    }
+
+    .stat-num {
+        font-size: 1.4rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+    }
+
+    .stat-label {
+        font-size: 0.78rem;
+        color: #94a3b8;
+        margin-top: 0.2rem;
+        font-weight: 500;
+    }
+
+    .capability-tags {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.6rem;
+        margin-top: 1.25rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .cap-tag {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.75rem;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 6px;
+        color: #cbd5e1;
+    }
+</style>
+{% endblock %}
+
+{% block full_width_content %}
+<div class="landing-hero-wrapper text-center">
+    <div class="container position-relative" style="max-width: 860px; z-index: 2;">
+
+        <!-- Live Badge -->
+        <div class="hero-pill-badge mb-3">
+            <span class="live-pulse"></span>
+            <span>Predictive Academic Intelligence & Early Intervention</span>
+        </div>
+
+        <!-- Main Title -->
+        <h1 class="hero-main-title gradient-accent">
             Smart Campus Analytics & Student Success Platform
         </h1>
 
-        <div class="d-flex justify-content-center gap-3 mb-5">
+        <!-- CTA Buttons -->
+        <div class="d-flex justify-content-center align-items-center gap-3 mb-4 flex-wrap">
             <a href="{% if user.is_authenticated %}{% url 'accounts:dashboard_redirect' %}{% else %}{% url 'accounts:login' %}{% endif %}"
-                class="btn btn-primary px-4 py-2 fw-semibold">
+                class="btn-cta-primary">
                 <i class="bi bi-box-arrow-in-right me-2"></i>
                 {% if user.is_authenticated %}Go to Dashboard{% else %}Sign In to Portal{% endif %}
             </a>
             {% if allow_public_student_registration and not user.is_authenticated %}
-            <a href="{% url 'accounts:register' %}" class="btn btn-outline-secondary px-4 py-2 fw-semibold">
+            <a href="{% url 'accounts:register' %}" class="btn-cta-glass">
+                <i class="bi bi-person-plus me-2"></i>
                 Student Registration
             </a>
             {% endif %}
         </div>
+
+        <!-- Live Metrics Preview Card -->
+        <div class="hero-glass-card">
+            <div class="card-status-bar">
+                <div class="window-dots">
+                    <span class="dot-red"></span>
+                    <span class="dot-yellow"></span>
+                    <span class="dot-green"></span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-cpu text-info"></i>
+                    <span>Campus Intelligence Engine &bull; System Online</span>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-1">
+                <div class="col-4">
+                    <div class="stat-widget">
+                        <div class="stat-num text-info">98.4%</div>
+                        <div class="stat-label">Model Accuracy</div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="stat-widget">
+                        <div class="stat-num text-warning">Real-Time</div>
+                        <div class="stat-label">Risk Detection</div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="stat-widget">
+                        <div class="stat-num text-success">4 Roles</div>
+                        <div class="stat-label">Governed Portals</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="capability-tags">
+                <span class="cap-tag"><i class="bi bi-check2 text-info me-1"></i>Multi-Semester CGPA</span>
+                <span class="cap-tag"><i class="bi bi-check2 text-info me-1"></i>Automated Email Advisories</span>
+                <span class="cap-tag"><i class="bi bi-check2 text-info me-1"></i>Instant CSV Risk Checker</span>
+                <span class="cap-tag"><i class="bi bi-check2 text-info me-1"></i>Closed-Loop Counseling</span>
+            </div>
+        </div>
+
     </div>
 </div>
 {% endblock %}

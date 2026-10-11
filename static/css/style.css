@@ -39,31 +39,27 @@ body {
 }
 
 /* Landing Page Hero */
-.hero-section.landing-hero {
-  background-color: #ffffff;
-  color: var(--text-main);
-  border-bottom: 1px solid var(--border-color);
-  padding: 4.5rem 1.5rem;
+.landing-hero-wrapper {
+  background: radial-gradient(1200px 600px at 50% 0%, rgba(56, 189, 248, 0.15), transparent 70%),
+              radial-gradient(800px 500px at 80% 20%, rgba(99, 102, 241, 0.12), transparent 60%),
+              radial-gradient(600px 400px at 20% 40%, rgba(168, 85, 247, 0.08), transparent 60%),
+              #090d16;
+  color: #f8fafc;
+  min-height: calc(100vh - 56px);
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 3.5rem 1rem;
 }
 
-.hero-title {
-  font-size: clamp(2rem, 5vw, 2.75rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: #0f172a;
-  line-height: 1.2;
-}
-
-.hero-subtitle {
-  font-size: 1.125rem;
-  color: #475569;
-  max-width: 640px;
-  margin-left: auto;
-  margin-right: auto;
-  line-height: 1.6;
+.hero-main-title {
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: #ffffff;
 }
 
 /* Clean Feature Highlights */

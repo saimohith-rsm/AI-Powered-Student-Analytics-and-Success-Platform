@@ -37,3 +37,4 @@ dist/
 node_modules/
 .env.local
 .env.production
+project-file-audit.txt
