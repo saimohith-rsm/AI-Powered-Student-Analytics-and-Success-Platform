@@ -19,7 +19,8 @@ from apps.analytics.dashboard_views import (
     CSVRiskCheckerAndImportView,
     DownloadSampleCSVTemplateView,
     SendStudentRiskAlertView,
-    SendBatchRiskAlertsView
+    SendBatchRiskAlertsView,
+    RecalculateDashboardView
 )
 
 app_name = 'analytics'
@@ -27,6 +28,7 @@ app_name = 'analytics'
 urlpatterns = [
     # Dashboard Pages
     path('dashboard/', OverviewDashboardView.as_view(), name='overview_dashboard'),
+    path('dashboard/recalculate/', RecalculateDashboardView.as_view(), name='recalculate_dashboard'),
     path('students/', StudentDirectoryView.as_view(), name='student_directory'),
     path('students/<str:student_id>/', StudentDetailView.as_view(), name='student_detail'),
     path('risk-monitoring/', AtRiskWorkspaceView.as_view(), name='risk_monitoring'),

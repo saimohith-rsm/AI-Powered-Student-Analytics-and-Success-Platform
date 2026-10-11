@@ -123,3 +123,9 @@ class RiskAlertTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Smart Campus Analytics & Student Success Platform")
         self.assertContains(response, "Sign In to Portal")
+
+    def test_recalculate_analytics_redirects_with_success_message(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(reverse('analytics:recalculate_dashboard'), follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Successfully recalculated analytics snapshots")

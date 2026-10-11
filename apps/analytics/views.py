@@ -96,9 +96,21 @@ class RecalculateAnalyticsAPIView(APIView):
         updated_count = 0
         for student in students.iterator():
             StudentAnalyticsEngine.evaluate_and_save_snapshot(student)
-            updated_count += 1
+        msg = f"Successfully recalculated analytics snapshots for {updated_count} active students."
+
+        # If submitted from a browser form, redirect back with a success message
+        accept_header = request.META.get('HTTP_ACCEPT', '')
+        if request.content_type != 'application/json' and (
+            'text/html' in accept_header or 'HTTP_REFERER' in request.META
+        ):
+            from django.contrib import messages
+            from django.shortcuts import redirect
+            from django.urls import reverse
+            messages.success(request, msg)
+            return redirect(request.META.get('HTTP_REFERER') or reverse('analytics:overview_dashboard'))
+
         return Response({
-            'message': f"Successfully recalculated analytics snapshots for {updated_count} active students.",
+            'message': msg,
             'updated_count': updated_count
         }, status=status.HTTP_200_OK)
 

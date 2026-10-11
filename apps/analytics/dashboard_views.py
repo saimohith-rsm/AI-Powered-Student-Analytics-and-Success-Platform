@@ -662,4 +662,25 @@ class SendBatchRiskAlertsView(BaseScopedQuerysetMixin, View):
 
         return redirect("analytics:risk_monitoring")
 
+class RecalculateDashboardView(LoginRequiredMixin, View):
+    """Triggers in-app batch analytics recalculation and redirects back to dashboard with flash message."""
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        if not (user.is_admin_user() or user.is_faculty_user() or user.is_placement_officer()):
+            raise PermissionDenied("Only faculty and administrators can trigger batch analytics re-computation.")
+
+        students = StudentProfile.objects.filter(enrollment_status='ACTIVE')
+        if user.is_faculty_user() and not user.is_admin_user():
+            if not user.department_name:
+                raise PermissionDenied("Your account has no assigned department.")
+            students = students.filter(department__code=user.department_name)
+
+        updated_count = 0
+        for student in students.iterator():
+            StudentAnalyticsEngine.evaluate_and_save_snapshot(student)
+            updated_count += 1
+
+        messages.success(request, f"Successfully recalculated analytics snapshots for {updated_count} active students.")
+        return redirect(request.META.get('HTTP_REFERER') or 'analytics:overview_dashboard')
+
 

@@ -10,7 +10,7 @@
         <p class="text-muted mb-0">Institution-wide student performance intelligence, risk distribution, and placement readiness.</p>
     </div>
     <div class="d-flex gap-2">
-        <form method="post" action="{% url 'analytics:api_recalculate' %}" class="d-inline">
+        <form method="post" action="{% url 'analytics:recalculate_dashboard' %}" class="d-inline">
             {% csrf_token %}
             <button type="submit" class="btn btn-outline-primary btn-sm rounded-pill fw-semibold">
                 <i class="bi bi-arrow-clockwise me-1"></i> Recalculate Analytics
