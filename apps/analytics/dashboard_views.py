@@ -6,7 +6,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.contrib import messages
 from django.http import HttpResponse
-from django.db.models import Avg, Count, Q
+from django.db.models import Avg, Count, Prefetch, Q, Value
+from django.db.models.functions import Concat
 from django.utils import timezone
 
 from apps.students.models import StudentProfile, Department, Program, Semester, AcademicYear
@@ -154,15 +155,23 @@ class StudentDirectoryView(BaseScopedQuerysetMixin, ListView):
     paginate_by = 15
 
     def get_queryset(self):
-        qs = self.get_scoped_students()
+        qs = self.get_scoped_students().prefetch_related(
+            Prefetch(
+                'success_snapshots',
+                queryset=StudentSuccessSnapshot.objects.order_by('-snapshot_date', '-overall_success_score')
+            )
+        )
         
         # Search query
-        q = self.request.GET.get('q')
+        q = self.request.GET.get('q', '').strip()
         if q:
-            qs = qs.filter(
+            qs = qs.annotate(
+                full_name_annotated=Concat('first_name', Value(' '), 'last_name')
+            ).filter(
                 Q(student_id__icontains=q) |
                 Q(first_name__icontains=q) |
                 Q(last_name__icontains=q) |
+                Q(full_name_annotated__icontains=q) |
                 Q(email__icontains=q)
             )
 

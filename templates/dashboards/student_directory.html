@@ -69,7 +69,7 @@
                         <td>Semester {{ student.current_semester }}</td>
                         <td>
                             {% if snapshot %}
-                                <span class="fw-bold text-primary">{{ snapshot.overall_success_score }} / 100</span>
+                                <span class="fw-bold text-primary">{{ snapshot.overall_success_score|floatformat:1 }} / 100</span>
                             {% else %}
                                 <span class="text-muted">N/A</span>
                             {% endif %}
@@ -82,8 +82,10 @@
                                     <span class="badge bg-warning text-dark">Medium Risk</span>
                                 {% elif snapshot.academic_risk_level == 'HIGH' %}
                                     <span class="badge bg-danger">High Risk</span>
-                                {% else %}
+                                {% elif snapshot.academic_risk_level == 'CRITICAL' %}
                                     <span class="badge bg-dark">Critical Risk</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Unknown</span>
                                 {% endif %}
                             {% else %}
                                 <span class="badge bg-secondary">Uncalculated</span>
@@ -91,10 +93,12 @@
                         </td>
                         <td>
                             {% if snapshot %}
-                                <div class="progress" style="height: 6px; width: 100px;">
-                                    <div class="progress-bar bg-info" style="width: {{ snapshot.placement_readiness_score }}%;"></div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 6px; min-width: 60px;">
+                                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ snapshot.placement_readiness_score|floatformat:0 }}%;" aria-valuenow="{{ snapshot.placement_readiness_score|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <span class="small text-muted font-monospace">{{ snapshot.placement_readiness_score|floatformat:0 }}%</span>
                                 </div>
-                                <span class="small text-muted">{{ snapshot.placement_readiness_score }}%</span>
                             {% else %}
                                 <span class="text-muted small">N/A</span>
                             {% endif %}
@@ -123,11 +127,11 @@
         <nav class="mt-4">
             <ul class="pagination pagination-sm justify-content-end mb-0">
                 {% if page_obj.has_previous %}
-                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_q }}&department={{ selected_dept }}&risk_level={{ selected_risk }}">Previous</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_q|urlencode }}&department={{ selected_dept|urlencode }}&risk_level={{ selected_risk|urlencode }}">Previous</a></li>
                 {% endif %}
                 <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
                 {% if page_obj.has_next %}
-                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_q }}&department={{ selected_dept }}&risk_level={{ selected_risk }}">Next</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_q|urlencode }}&department={{ selected_dept|urlencode }}&risk_level={{ selected_risk|urlencode }}">Next</a></li>
                 {% endif %}
             </ul>
         </nav>
