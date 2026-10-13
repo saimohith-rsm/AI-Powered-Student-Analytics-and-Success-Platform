@@ -39,8 +39,13 @@ class UserLoginView(LoginView):
         messages.error(self.request, "Invalid username or password. Please try again.")
         return super().form_invalid(form)
 
+@method_decorator(never_cache, name='dispatch')
 class UserLogoutView(LogoutView):
+    http_method_names = ['get', 'post', 'options']
     next_page = reverse_lazy('accounts:login')
+
+    def get(self, request, *args, **kwargs):
+        return self.post(request, *args, **kwargs)
 
 @method_decorator(never_cache, name='dispatch')
 class UserRegisterView(View):
@@ -58,15 +63,13 @@ class UserRegisterView(View):
                 return []
 
     def get(self, request, *args, **kwargs):
-        if request.user.is_authenticated:
-            return redirect('accounts:dashboard_redirect')
-        if not settings.ALLOW_PUBLIC_STUDENT_REGISTRATION:
+        if not settings.ALLOW_PUBLIC_STUDENT_REGISTRATION and not (request.user.is_authenticated and request.user.is_admin_user()):
             raise PermissionDenied("Public registration is disabled. Contact your campus administrator.")
         departments = self.get_departments()
         return render(request, self.template_name, {'departments': departments})
 
     def post(self, request, *args, **kwargs):
-        if not settings.ALLOW_PUBLIC_STUDENT_REGISTRATION:
+        if not settings.ALLOW_PUBLIC_STUDENT_REGISTRATION and not (request.user.is_authenticated and request.user.is_admin_user()):
             raise PermissionDenied("Public registration is disabled. Contact your campus administrator.")
         username = request.POST.get('username', '').strip()
         email = request.POST.get('email', '').strip()
@@ -122,9 +125,15 @@ class UserRegisterView(View):
             user.delete()
             messages.error(request, "That student ID is already registered. Please use your assigned student ID.")
             return render(request, self.template_name, {'departments': self.get_departments()})
-        dept = Department.objects.filter(id=dept_id).first() if dept_id else Department.objects.first()
+        
+        dept = None
+        if dept_id and str(dept_id).strip().isdigit():
+            dept = Department.objects.filter(id=int(dept_id)).first()
+        if not dept:
+            dept = Department.objects.first()
         if not dept:
             dept = Department.objects.create(code='CSE', name='Computer Science & Engineering')
+            
         prog = dept.programs.first() if dept else None
         if not prog and dept:
             prog = Program.objects.create(code=f'BTECH-{dept.code}', name=f'B.Tech in {dept.name}', department=dept)
@@ -141,6 +150,11 @@ class UserRegisterView(View):
             current_semester=1
         )
         StudentAnalyticsEngine.evaluate_and_save_snapshot(student_profile)
+
+        # If an admin or faculty member registered the student, return them to the Student Directory
+        if request.user.is_authenticated and (request.user.is_admin_user() or request.user.is_faculty_user()):
+            messages.success(request, f"Student account '{user.username}' successfully registered and enrolled in the directory!")
+            return redirect('analytics:student_directory')
 
         login(request, user)
         messages.success(request, f"Account successfully created! Welcome to Smart Campus Analytics, {user.username}.")

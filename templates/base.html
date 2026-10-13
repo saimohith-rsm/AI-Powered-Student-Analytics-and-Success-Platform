@@ -58,6 +58,7 @@
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end shadow">
                                 <li><a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="bi bi-person"></i> My Profile</a></li>
+                                <li><a class="dropdown-item" href="{% url 'accounts:register' %}"><i class="bi bi-person-plus"></i> Register Student</a></li>
                                 {% if user.is_admin_user %}
                                     <li><a class="dropdown-item" href="/admin/" target="_blank" rel="noopener noreferrer"><i class="bi bi-sliders"></i> Django Admin</a></li>
                                 {% endif %}
