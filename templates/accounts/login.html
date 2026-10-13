@@ -2,6 +2,36 @@
 
 {% block title %}Sign In - Smart Campus Analytics{% endblock %}
 
+{% block extra_css %}
+<style>
+.role-btn {
+    border-radius: 0.65rem;
+    transition: all 0.2s ease-in-out;
+    background-color: #f8f9fa;
+    border-color: #dee2e6 !important;
+    cursor: pointer;
+}
+.role-btn:hover {
+    background-color: #eef2ff;
+    border-color: #0d6efd !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(13, 110, 253, 0.12);
+}
+.role-btn.active {
+    background-color: #e7f1ff !important;
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.35);
+}
+.role-btn.active .role-label {
+    color: #0d6efd !important;
+    font-weight: 700 !important;
+}
+.role-label {
+    font-size: 0.75rem;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center py-5">
     <div class="col-md-5 col-lg-4">
@@ -17,12 +47,13 @@
 
                 <form method="post" action="{% url 'accounts:login' %}">
                     {% csrf_token %}
-                    
+
                     <div class="mb-3">
                         <label for="id_username" class="form-label fw-semibold">Username</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
-                            <input type="text" name="username" class="form-control" id="id_username" placeholder="Enter username" required autofocus>
+                            <input type="text" name="username" class="form-control" id="id_username"
+                                placeholder="Enter username" required autofocus>
                         </div>
                     </div>
 
@@ -30,7 +61,8 @@
                         <label for="id_password" class="form-label fw-semibold">Password</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light"><i class="bi bi-lock"></i></span>
-                            <input type="password" name="password" class="form-control" id="id_password" placeholder="Enter password" required>
+                            <input type="password" name="password" class="form-control" id="id_password"
+                                placeholder="Enter password" required>
                         </div>
                     </div>
 
@@ -40,23 +72,54 @@
                 </form>
 
                 <div class="text-center mt-3 small">
-                    {% if allow_public_student_registration %}Need a new student account? <a href="{% url 'accounts:register' %}" class="fw-bold text-success">Sign Up / Register Here</a>{% else %}Need an account? Contact your campus administrator.{% endif %}
+                    {% if allow_public_student_registration %}Need a new student account? <a
+                        href="{% url 'accounts:register' %}" class="fw-bold text-success">Sign Up / Register Here</a>{%
+                    else %}Need an account? Contact your campus administrator.{% endif %}
                 </div>
 
                 <hr class="my-4">
 
-                <div class="bg-light p-3 rounded-3 border">
-                    <p class="fw-bold small mb-2 text-primary"><i class="bi bi-info-circle"></i> Quick Test Credentials:</p>
-                    <ul class="list-unstyled small mb-0 font-monospace text-secondary">
-                        <li><strong>Your Admin:</strong> sindhu861 / sindhu@861</li>
-                        <li><strong>Admin:</strong> admin / Admin@1234</li>
-                        <li><strong>Faculty:</strong> faculty_cse / Faculty@1234</li>
-                        <li><strong>Placement:</strong> placement_officer / Placement@1234</li>
-                        <li><strong>Student:</strong> stu2025001 / Student@1234</li>
-                    </ul>
+                <!-- Four Clickable Role Items in a Single Horizontal Row -->
+                <div class="quick-role-select">
+                    <div class="d-flex justify-content-between align-items-center gap-2">
+                        <button type="button" class="role-btn btn btn-light border flex-fill text-center p-2" onclick="selectRole(this, 'admin', 'Admin@1234')">
+                            <span class="d-block fs-4 mb-1">👨‍💼</span>
+                            <span class="d-block small fw-semibold text-secondary role-label">Admin</span>
+                        </button>
+                        <button type="button" class="role-btn btn btn-light border flex-fill text-center p-2" onclick="selectRole(this, 'faculty_cse', 'Faculty@1234')">
+                            <span class="d-block fs-4 mb-1">👨‍🏫</span>
+                            <span class="d-block small fw-semibold text-secondary role-label">Faculty</span>
+                        </button>
+                        <button type="button" class="role-btn btn btn-light border flex-fill text-center p-2" onclick="selectRole(this, 'placement_officer', 'Placement@1234')">
+                            <span class="d-block fs-4 mb-1">💼</span>
+                            <span class="d-block small fw-semibold text-secondary role-label">Placement</span>
+                        </button>
+                        <button type="button" class="role-btn btn btn-light border flex-fill text-center p-2" onclick="selectRole(this, 'stu2025001', 'Student@1234')">
+                            <span class="d-block fs-4 mb-1">🎓</span>
+                            <span class="d-block small fw-semibold text-secondary role-label">Student</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+function selectRole(buttonEl, username, password) {
+    const userInput = document.getElementById('id_username');
+    const passInput = document.getElementById('id_password');
+    if (userInput && passInput) {
+        userInput.value = username;
+        passInput.value = password;
+        userInput.focus();
+    }
+    document.querySelectorAll('.role-btn').forEach(function(el) {
+        el.classList.remove('active');
+    });
+    if (buttonEl) {
+        buttonEl.classList.add('active');
+    }
+}
+</script>
 {% endblock %}
