@@ -14,7 +14,6 @@ from django.core.validators import validate_email
 
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import csrf_protect
 
 from apps.accounts.models import User
 from apps.students.models import StudentProfile, Department, Program
@@ -29,7 +28,6 @@ class LandingPageView(TemplateView):
         return super().get(request, *args, **kwargs)
 
 @method_decorator(never_cache, name='dispatch')
-@method_decorator(csrf_protect, name='dispatch')
 class UserLoginView(LoginView):
     template_name = 'accounts/login.html'
     redirect_authenticated_user = True
@@ -45,7 +43,6 @@ class UserLogoutView(LogoutView):
     next_page = reverse_lazy('accounts:login')
 
 @method_decorator(never_cache, name='dispatch')
-@method_decorator(csrf_protect, name='dispatch')
 class UserRegisterView(View):
     template_name = 'accounts/register.html'
 

@@ -43,12 +43,15 @@ if RAILWAY_PUBLIC_DOMAIN:
     ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
 
 # Reverse Proxy & SSL Configuration
+is_serverless = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
+is_production = is_serverless or not DEBUG
+
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
 
 CSRF_TRUSTED_ORIGINS = env_list(
     "CSRF_TRUSTED_ORIGINS",
-    "https://*.vercel.app,https://*.onrender.com,https://*.up.railway.app,http://localhost:8000,http://127.0.0.1:8000,http://localhost,http://127.0.0.1",
+    "https://*.vercel.app,https://ai-powered-student-analytics-and-su-rho.vercel.app,https://*.onrender.com,https://*.up.railway.app,http://localhost:8000,http://127.0.0.1:8000,http://localhost,http://127.0.0.1",
 )
 if RENDER_EXTERNAL_HOSTNAME:
     CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
@@ -60,9 +63,8 @@ if RAILWAY_PUBLIC_DOMAIN:
 # CSRF & Session Cookie Settings
 CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SAMESITE = "Lax"
-if os.getenv("VERCEL") or not DEBUG:
-    CSRF_COOKIE_SECURE = True
-    SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = env_bool("CSRF_COOKIE_SECURE", is_production)
+SESSION_COOKIE_SECURE = env_bool("SESSION_COOKIE_SECURE", is_production)
 
 AUTH_USER_MODEL = "accounts.User"
 ALLOW_PUBLIC_STUDENT_REGISTRATION = env_bool("ALLOW_PUBLIC_STUDENT_REGISTRATION", DEBUG)
@@ -174,17 +176,13 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {"anon": os.getenv("API_ANON_RATE", "60/hour"), "user": os.getenv("API_USER_RATE", "600/hour")},
 }
 
-SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", not DEBUG)
-SESSION_COOKIE_SECURE = env_bool("SESSION_COOKIE_SECURE", not DEBUG)
-CSRF_COOKIE_SECURE = env_bool("CSRF_COOKIE_SECURE", not DEBUG)
-SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "31536000" if not DEBUG else "0"))
-SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", not DEBUG)
-SECURE_HSTS_PRELOAD = env_bool("SECURE_HSTS_PRELOAD", not DEBUG)
+SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", not DEBUG and not is_serverless)
+SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "31536000" if (not DEBUG and not is_serverless) else "0"))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", not DEBUG and not is_serverless)
+SECURE_HSTS_PRELOAD = env_bool("SECURE_HSTS_PRELOAD", not DEBUG and not is_serverless)
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https") if env_bool("USE_X_FORWARDED_HOST", not DEBUG) else None
-USE_X_FORWARDED_HOST = env_bool("USE_X_FORWARDED_HOST", not DEBUG)
 
 FILE_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv("FILE_UPLOAD_MAX_MEMORY_SIZE", str(5 * 1024 * 1024)))
 DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv("DATA_UPLOAD_MAX_MEMORY_SIZE", str(5 * 1024 * 1024)))
